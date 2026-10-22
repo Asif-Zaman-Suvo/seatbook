@@ -1,56 +1,30 @@
 import { Router } from 'express';
 import bcrypt from 'bcryptjs';
-import jwt from 'jsonwebtoken';
 import prisma from '../db';
+import { AppConfig } from '../config';
+import { asyncHandler, HttpError } from '../http';
+import { credentials, registration } from '../validation';
+import { issueToken } from '../middleware/auth';
 
-const router = Router();
+const publicUser = { id: true, email: true, name: true, role: true } as const;
 
-router.post('/register', async (req, res) => {
-  try {
-    const { email, password, name, role } = req.body;
-
-    if (!email || !password || !name) {
-      return res.status(400).json({ error: 'email, password and name are required' });
-    }
-
+export default function authRoutes(config: AppConfig) {
+  const router = Router();
+  router.post('/register', asyncHandler(async (req, res) => {
+    const { password, ...data } = registration(req.body);
+    // The database unique constraint also resolves simultaneous registrations.
+    if (await prisma.user.findUnique({ where: { email: data.email }, select: { id: true } })) throw new HttpError(409, 'EMAIL_IN_USE', 'That email is already registered');
     const passwordHash = await bcrypt.hash(password, 10);
-    const user = await prisma.user.create({
-      data: {
-        email,
-        name,
-        passwordHash,
-        role: role === 'ORGANIZER' ? 'ORGANIZER' : 'ATTENDEE',
-      },
-    });
+    const user = await prisma.user.create({ data: { ...data, passwordHash }, select: publicUser });
+    res.status(201).json({ token: issueToken(user, config), user });
+  }));
 
-    const token = jwt.sign({ id: user.id, email: user.email, role: user.role }, 'seatbook-secret-123', {
-      expiresIn: '7d',
-    });
-
-    res.status(201).json({ token, user: { id: user.id, email: user.email, name: user.name, role: user.role } });
-  } catch (err: any) {
-    res.status(400).json({ error: err.message });
-  }
-});
-
-router.post('/login', async (req, res) => {
-  const { email, password } = req.body;
-
-  const user = await prisma.user.findUnique({ where: { email } });
-  if (!user) {
-    return res.status(401).json({ message: 'Invalid credentials' });
-  }
-
-  const ok = await bcrypt.compare(password, user.passwordHash);
-  if (!ok) {
-    return res.status(401).json({ message: 'Invalid credentials' });
-  }
-
-  const token = jwt.sign({ id: user.id, email: user.email, role: user.role }, 'seatbook-secret-123', {
-    expiresIn: '7d',
-  });
-
-  res.json({ token, user: { id: user.id, email: user.email, name: user.name, role: user.role } });
-});
-
-export default router;
+  router.post('/login', asyncHandler(async (req, res) => {
+    const { email, password } = credentials(req.body);
+    const user = await prisma.user.findUnique({ where: { email } });
+    if (!user || !(await bcrypt.compare(password, user.passwordHash))) throw new HttpError(401, 'INVALID_CREDENTIALS', 'Invalid email or password');
+    const { passwordHash: _hash, createdAt: _createdAt, ...safeUser } = user;
+    res.json({ token: issueToken(user, config), user: safeUser });
+  }));
+  return router;
+}

@@ -1,24 +1,15 @@
-import express from 'express';
-import cors from 'cors';
-import authRoutes from './routes/auth';
-import eventRoutes from './routes/events';
-import bookingRoutes from './routes/bookings';
+import { createApp } from './app';
+import { loadConfig } from './config';
+import prisma from './db';
 
-const app = express();
-
-app.use(cors());
-app.use(express.json());
-
-app.get('/health', (req, res) => {
-  res.json({ ok: true });
+const config = loadConfig();
+const server = createApp(config).listen(config.port, () => {
+  console.log(`Seatbook API running on http://localhost:${config.port}`);
 });
 
-app.use('/auth', authRoutes);
-app.use('/events', eventRoutes);
-app.use('/bookings', bookingRoutes);
-
-const PORT = process.env.PORT || 4000;
-
-app.listen(PORT, () => {
-  console.log(`Seatbook API running on http://localhost:${PORT}`);
-});
+function shutdown() {
+  server.close(() => { prisma.$disconnect().finally(() => process.exit(0)); });
+  setTimeout(() => process.exit(1), 10_000).unref();
+}
+process.once('SIGTERM', shutdown);
+process.once('SIGINT', shutdown);

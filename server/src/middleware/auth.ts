@@ -1,30 +1,49 @@
-import { Request, Response, NextFunction } from 'express';
+import { Request, RequestHandler } from 'express';
 import jwt from 'jsonwebtoken';
-
-const JWT_SECRET = process.env.JWT_SECRET || 'seatbook-secret-123';
+import { Role } from '@prisma/client';
+import prisma from '../db';
+import { AppConfig } from '../config';
+import { asyncHandler, HttpError } from '../http';
 
 export interface AuthUser {
   id: number;
   email: string;
-  role: 'ORGANIZER' | 'ATTENDEE';
+  role: Role;
 }
 
-export interface AuthRequest extends Request {
-  user?: AuthUser;
+export interface AuthRequest extends Request { user?: AuthUser; }
+
+export function issueToken(user: AuthUser, config: AppConfig): string {
+  return jwt.sign({ email: user.email, role: user.role }, config.jwtSecret, {
+    subject: String(user.id), algorithm: 'HS256', expiresIn: '7d', issuer: 'seatbook-api', audience: 'seatbook-client',
+  });
 }
 
-export function requireAuth(req: AuthRequest, res: Response, next: NextFunction) {
-  const header = req.headers.authorization;
-  if (!header) {
-    return res.status(401).json({ error: 'Not logged in' });
-  }
-
-  const token = header.replace('Bearer ', '');
-  try {
-    const payload = jwt.verify(token, JWT_SECRET) as AuthUser;
-    req.user = payload;
+export function requireAuth(config: AppConfig): RequestHandler {
+  return asyncHandler(async (req: AuthRequest, _res, next) => {
+    const match = /^Bearer ([^\s]+)$/i.exec(req.headers.authorization || '');
+    if (!match) throw new HttpError(401, 'UNAUTHENTICATED', 'Please sign in');
+    let payload: jwt.JwtPayload;
+    try {
+      const verified = jwt.verify(match[1], config.jwtSecret, { algorithms: ['HS256'], issuer: 'seatbook-api', audience: 'seatbook-client' });
+      if (typeof verified === 'string' || !verified.sub || !/^[1-9]\d*$/.test(verified.sub) || !Number.isInteger(verified.exp) || !['ORGANIZER', 'ATTENDEE'].includes(verified.role) || typeof verified.email !== 'string') throw new Error('Invalid claims');
+      payload = verified;
+    } catch {
+      throw new HttpError(401, 'UNAUTHENTICATED', 'Your session is invalid or expired. Please sign in again.');
+    }
+    const id = Number(payload.sub);
+    if (!Number.isInteger(id) || id > 2147483647) throw new HttpError(401, 'UNAUTHENTICATED', 'Invalid session');
+    // Read the current identity; a signed role may be stale.
+    const user = await prisma.user.findUnique({ where: { id }, select: { id: true, email: true, role: true } });
+    if (!user) throw new HttpError(401, 'UNAUTHENTICATED', 'Please sign in again');
+    req.user = user;
     next();
-  } catch (err) {
-    return res.status(401).json({ message: 'Invalid token' });
-  }
+  });
+}
+
+export function requireRole(role: Role): RequestHandler {
+  return (req: AuthRequest, _res, next) => {
+    if (req.user?.role !== role) return next(new HttpError(403, 'FORBIDDEN', `This action requires an ${role.toLowerCase()} account`));
+    next();
+  };
 }

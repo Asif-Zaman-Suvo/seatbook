@@ -9,5 +9,5 @@
     "resolveJsonModule": true,
     "outDir": "dist"
   },
-  "include": ["src", "prisma", "test"]
+  "include": ["src", "prisma", "test", "vitest*.mts"]
 }

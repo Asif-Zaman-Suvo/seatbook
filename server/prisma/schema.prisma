@@ -42,6 +42,8 @@ model Event {
   organizer   User     @relation(fields: [organizerId], references: [id])
   seats       Seat[]
   createdAt   DateTime @default(now())
+
+  @@index([startsAt])
 }
 
 model Seat {
@@ -65,4 +67,8 @@ model Booking {
   status      BookingStatus @default(CONFIRMED)
   createdAt   DateTime      @default(now())
   cancelledAt DateTime?
+
+  // Confirmed-seat uniqueness and CHECK constraints live in migration SQL.
+  @@index([seatId, status])
+  @@index([userId, createdAt])
 }
