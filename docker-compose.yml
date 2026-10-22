@@ -6,7 +6,7 @@ services:
       POSTGRES_PASSWORD: seatbook
       POSTGRES_DB: seatbook
     ports:
-      - "5433:5432"
+      - "127.0.0.1:5434:5432"
     volumes:
       - db-data:/var/lib/postgresql/data
     healthcheck:
@@ -20,21 +20,25 @@ services:
     environment:
       DATABASE_URL: postgresql://seatbook:seatbook@db:5432/seatbook
       PORT: 4000
+      NODE_ENV: development
+      JWT_SECRET: ${JWT_SECRET:-}
+      CLIENT_ORIGIN: http://localhost:5173
     ports:
-      - "4000:4000"
+      - "127.0.0.1:4000:4000"
     depends_on:
       db:
         condition: service_healthy
     volumes:
       - ./server/src:/app/src
       - ./server/prisma:/app/prisma
+      - api-config:/app/.data
 
   client:
     build: ./client
     environment:
       VITE_API_URL: http://localhost:4000
     ports:
-      - "5173:5173"
+      - "127.0.0.1:5173:5173"
     depends_on:
       - server
     volumes:
@@ -42,3 +46,4 @@ services:
 
 volumes:
   db-data:
+  api-config:

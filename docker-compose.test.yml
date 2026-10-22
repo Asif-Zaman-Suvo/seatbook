@@ -1,0 +1,33 @@
+# A separate, disposable PostgreSQL instance. Never attaches the app's db-data.
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: seatbook_test
+      POSTGRES_PASSWORD: seatbook_test
+      POSTGRES_DB: seatbook_test
+    ports:
+      - "127.0.0.1:${TEST_DB_PORT:-55435}:5432"
+    tmpfs:
+      - /var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U seatbook_test -d seatbook_test"]
+      interval: 1s
+      timeout: 3s
+      retries: 30
+
+  server-tests:
+    build: ./server
+    profiles: ["test"]
+    environment:
+      NODE_ENV: test
+      TEST_DATABASE_URL: postgresql://seatbook_test:seatbook_test@db:5432/seatbook_test
+    command: ["sh", "-c", "npm run typecheck && npm test && npm run test:integration"]
+    depends_on:
+      db:
+        condition: service_healthy
+
+  client-tests:
+    build: ./client
+    profiles: ["test"]
+    command: ["sh", "-c", "npm test && npm run build"]
