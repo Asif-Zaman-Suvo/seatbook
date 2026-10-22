@@ -82,9 +82,17 @@ Implemented: JWT configuration/claim validation, current database identity and r
 
 Assumptions: organizer registration is public; bookings are attendee-only; cancellation remains allowed after event start; free tickets are valid; email identity is trimmed and lowercase. Registration passwords require 12 characters and at most 72 UTF-8 bytes. Login preserves existing bcrypt behavior, including short demo passwords and legacy inputs exceeding 72 bytes, without trimming, truncating, or rehashing them. Login input is bounded by the API's 32 KiB JSON body budget (including JSON overhead), with a matching upper bound in validation. Currency remains the existing USD display. The unsupported frontend service fee was removed; no payment functionality exists.
 
-Seat holds are **not implemented yet**. Phase 2 requires review approval. Full clean-start/seed reliability verification, broader browser testing, launch hardening, and final handover/transcript packaging remain for later phases. Development Compose is not a production deployment configuration. The per-process authentication limiter would need shared enforcement if multiple API instances were deployed.
+Phase 1 verification is recorded in [docs/phase-1.md](docs/phase-1.md). Full clean-start/seed reliability verification, broader browser testing, launch hardening, and final handover/transcript packaging remain for later phases. Development Compose is not a production deployment configuration. The per-process authentication limiter would need shared enforcement if multiple API instances were deployed.
 
 An actual AI mistake: I initially chose frontend Vitest 5 without checking its Vite peer range. npm rejected Vite 5. An attempted older compatible Vitest introduced critical transitive advisories, so I checked package metadata and the audit report and moved to patched Vite 6.4.5 with Vitest 5. I did not bypass peer checks with `--force` or rewrite the application. Final verification results are recorded in `docs/phase-1.md`.
+
+## Phase 2 backend holds
+
+Attendees can hold a seat for exactly ten minutes using PostgreSQL time, recover active holds after refresh/restart, explicitly confirm, or release. Repeated active-hold requests do not extend the deadline. Expired holds stop affecting availability immediately; the next seat mutation reconciles them without a background worker. One partial unique index prevents both competing holds and hold-versus-booking conflicts, with seat-row locks serializing mutations.
+
+The existing immediate-booking endpoint remains available for unheld seats. A hold owner must use its confirmation endpoint; active holds cannot be bypassed through immediate booking. Confirmed hold reservations appear in the existing booking history and support the existing cancellation endpoint. The frontend hold controls/countdown are not implemented yet; they belong to Phase 3.
+
+See [Phase 2 API contracts, migration design, guarantees, verification, and remaining risks](docs/phase-2.md). Its two migrations are additive to the committed migration history and have only been applied to isolated test databases during development. Do not run them against the application database without separate approval.
 
 ## API
 
@@ -95,8 +103,12 @@ An actual AI mistake: I initially chose frontend Vitest 5 without checking its V
 | GET | `/events` | none | List events with seats left |
 | GET | `/events/:id` | none | One event with its seat map |
 | POST | `/events` | organizer | Create an event and its seats |
-| POST | `/bookings` | attendee | Book a seat |
+| POST | `/bookings` | attendee | Immediately book an unheld seat |
 | GET | `/bookings/mine` | attendee | Your bookings |
 | POST | `/bookings/:id/cancel` | attendee | Cancel a booking |
+| POST | `/holds` | attendee | Hold a seat; reuse an existing own active hold without extending it |
+| GET | `/holds/mine` | attendee | Recover your active holds and server time |
+| POST | `/holds/:id/confirm` | attendee | Confirm your hold; retries return the same booking |
+| POST | `/holds/:id/release` | attendee | Release your hold; repeated release is safe |
 
 Send the token as `Authorization: Bearer <token>`.
