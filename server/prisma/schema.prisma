@@ -16,6 +16,9 @@ enum Role {
 enum BookingStatus {
   CONFIRMED
   CANCELLED
+  HELD
+  EXPIRED
+  RELEASED
 }
 
 model User {
@@ -67,8 +70,10 @@ model Booking {
   status      BookingStatus @default(CONFIRMED)
   createdAt   DateTime      @default(now())
   cancelledAt DateTime?
+  expiresAt   DateTime?
 
-  // Confirmed-seat uniqueness and CHECK constraints live in migration SQL.
+  // HELD/CONFIRMED seat uniqueness and hold CHECKs live in migration SQL.
   @@index([seatId, status])
   @@index([userId, createdAt])
+  @@index([userId, status, expiresAt])
 }

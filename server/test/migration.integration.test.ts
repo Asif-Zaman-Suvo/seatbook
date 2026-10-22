@@ -14,6 +14,7 @@ if (base.pathname !== '/seatbook_test' || base.username !== 'seatbook_test') {
 const admin = new PrismaClient({ datasources: { db: { url: base.toString() } } });
 const migration = '20261022000000_booking_integrity';
 let baseline: string;
+let phase1Baseline: string;
 
 beforeAll(() => {
   baseline = mkdtempSync(join(tmpdir(), 'seatbook-baseline-'));
@@ -22,11 +23,15 @@ beforeAll(() => {
   cpSync(resolve('prisma/migrations/migration_lock.toml'), join(baseline, 'migrations/migration_lock.toml'));
   // Deploy the original migration, not db push or a hand-recreated approximation.
   cpSync(resolve('prisma/migrations/20261001000000_init'), join(baseline, 'migrations/20261001000000_init'), { recursive: true });
+  phase1Baseline = mkdtempSync(join(tmpdir(), 'seatbook-phase1-baseline-'));
+  cpSync(baseline, phase1Baseline, { recursive: true });
+  cpSync(resolve('prisma/migrations/20261022000000_booking_integrity'), join(phase1Baseline, 'migrations/20261022000000_booking_integrity'), { recursive: true });
 });
 
 afterAll(async () => {
   await admin.$disconnect();
   if (baseline) rmSync(baseline, { recursive: true, force: true });
+  if (phase1Baseline) rmSync(phase1Baseline, { recursive: true, force: true });
 });
 
 function cli(url: string, args: string[], schema = resolve('prisma/schema.prisma')) {
@@ -41,7 +46,11 @@ async function snapshot(db: PrismaClient) {
   const orderBy = { id: 'asc' as const };
   return {
     users: await db.user.findMany({ orderBy }), events: await db.event.findMany({ orderBy }),
-    seats: await db.seat.findMany({ orderBy }), bookings: await db.booking.findMany({ orderBy }),
+    seats: await db.seat.findMany({ orderBy }),
+    // Read the original columns explicitly: the current Prisma model includes
+    // expiresAt, which does not exist until the Phase 2 migration is deployed.
+    bookings: await db.$queryRaw<Array<{ id: number; seatId: number; userId: number; status: string; createdAt: Date; cancelledAt: Date | null }>>`
+      SELECT id, "seatId", "userId", status, "createdAt", "cancelledAt" FROM "Booking" ORDER BY id`,
   };
 }
 
@@ -59,14 +68,14 @@ async function fixture(db: PrismaClient) {
     startsAt: new Date('2020-01-01T18:00:00Z'), rows: 1, cols: 1, priceCents: 0, organizerId: organizer.id,
     seats: { create: [{ row: 0, col: 0, label: 'A1' }] },
   }, include: { seats: true } });
-  const booking = await db.booking.create({ data: { seatId: event.seats[0].id, userId: alice.id, createdAt: new Date('2026-09-01T01:00:00Z') } });
+  const booking = await db.booking.create({ select: { id: true }, data: { seatId: event.seats[0].id, userId: alice.id, createdAt: new Date('2026-09-01T01:00:00Z') } });
   for (const userId of [alice.id, bob.id]) {
-    await db.booking.create({ data: {
+    await db.booking.create({ select: { id: true }, data: {
       seatId: event.seats[0].id, userId, status: 'CANCELLED',
       createdAt: new Date('2026-08-01T01:00:00Z'), cancelledAt: new Date('2026-08-02T02:00:00Z'),
     } });
   }
-  await db.booking.create({ data: { seatId: past.seats[0].id, userId: bob.id, createdAt: new Date('2019-12-01T01:00:00Z') } });
+  await db.booking.create({ select: { id: true }, data: { seatId: past.seats[0].id, userId: bob.id, createdAt: new Date('2019-12-01T01:00:00Z') } });
   return { alice, bob, event, booking };
 }
 
@@ -95,6 +104,24 @@ function normalized(before: Awaited<ReturnType<typeof snapshot>>) {
 }
 
 describe('populated database migration through Prisma CLI', () => {
+  it('upgrades a populated Phase 1 database without changing bookings or prior migration records', async () => {
+    await withLegacyDatabase(async (db, url) => {
+      const phase1 = cli(url, ['deploy'], join(phase1Baseline, 'schema.prisma'));
+      expect(phase1.status, phase1.output).toBe(0);
+      const before = await snapshot(db);
+      const history = await db.$queryRaw`SELECT * FROM "_prisma_migrations" ORDER BY migration_name`;
+      const upgraded = cli(url, ['deploy']);
+      expect(upgraded.status, upgraded.output).toBe(0);
+      expect(await snapshot(db)).toEqual(before);
+      expect(await db.$queryRaw`SELECT * FROM "_prisma_migrations" WHERE migration_name IN ('20261001000000_init', '20261022000000_booking_integrity') ORDER BY migration_name`).toEqual(history);
+      expect(await db.booking.findMany({ select: { expiresAt: true } })).toEqual(before.bookings.map(() => ({ expiresAt: null })));
+      expect(await db.$queryRaw`SELECT indexname FROM pg_indexes WHERE indexname = 'Booking_one_live_reservation_per_seat'`).toHaveLength(1);
+      const redeployed = cli(url, ['deploy']);
+      expect(redeployed.status, redeployed.output).toBe(0);
+      expect(await snapshot(db)).toEqual(before);
+    });
+  }, 60_000);
+
   it('preserves all bookings, identities, hashes, dates and relationships; redeploys idempotently', async () => {
     await withLegacyDatabase(async (db, url, data) => {
       const before = await snapshot(db);
@@ -104,7 +131,7 @@ describe('populated database migration through Prisma CLI', () => {
       const redeployed = cli(url, ['deploy']);
       expect(redeployed.status, redeployed.output).toBe(0);
       expect(await snapshot(db)).toEqual(normalized(before));
-      await expect(db.booking.create({ data: { seatId: data.event.seats[0].id, userId: data.bob.id } })).rejects.toMatchObject({ code: 'P2002' });
+      await expect(db.booking.create({ select: { id: true }, data: { seatId: data.event.seats[0].id, userId: data.bob.id } })).rejects.toMatchObject({ code: 'P2002' });
       expect(await snapshot(db)).toEqual(normalized(before));
     });
   }, 60_000);
@@ -120,8 +147,8 @@ describe('populated database migration through Prisma CLI', () => {
     await withLegacyDatabase(async (db, url, data) => {
       let reconcile: () => Promise<unknown>;
       if (kind === 'duplicate booking') {
-        const duplicate = await db.booking.create({ data: { seatId: data.event.seats[0].id, userId: data.bob.id } });
-        reconcile = () => db.booking.update({ where: { id: duplicate.id }, data: { status: 'CANCELLED', cancelledAt: new Date('2026-10-22T00:00:00Z') } });
+        const duplicate = await db.booking.create({ select: { id: true }, data: { seatId: data.event.seats[0].id, userId: data.bob.id } });
+        reconcile = () => db.booking.update({ select: { id: true }, where: { id: duplicate.id }, data: { status: 'CANCELLED', cancelledAt: new Date('2026-10-22T00:00:00Z') } });
       } else if (kind === 'email collision') {
         const collision = await db.user.create({ data: { email: 'alice@example.test', name: 'Collision', passwordHash: 'fixture-collision-hash' } });
         reconcile = () => db.user.update({ where: { id: collision.id }, data: { email: 'reconciled@example.test' } });
@@ -135,8 +162,8 @@ describe('populated database migration through Prisma CLI', () => {
         await db.seat.update({ where: { id: data.event.seats[0].id }, data: { row: -1 } });
         reconcile = () => db.seat.update({ where: { id: data.event.seats[0].id }, data: { row: 0 } });
       } else {
-        await db.booking.update({ where: { id: data.booking.id }, data: { cancelledAt: new Date('2026-10-22T00:00:00Z') } });
-        reconcile = () => db.booking.update({ where: { id: data.booking.id }, data: { cancelledAt: null } });
+        await db.booking.update({ select: { id: true }, where: { id: data.booking.id }, data: { cancelledAt: new Date('2026-10-22T00:00:00Z') } });
+        reconcile = () => db.booking.update({ select: { id: true }, where: { id: data.booking.id }, data: { cancelledAt: null } });
       }
 
       const before = await snapshot(db);
@@ -172,7 +199,7 @@ describe('populated database migration through Prisma CLI', () => {
       expect((await db.$queryRaw<Array<{ count: number }>>`
         SELECT count(*)::int AS count FROM "_prisma_migrations"
         WHERE migration_name = ${migration} AND finished_at IS NOT NULL AND rolled_back_at IS NULL`)[0].count).toBe(1);
-      await expect(db.booking.create({ data: { seatId: data.event.seats[0].id, userId: data.bob.id } })).rejects.toMatchObject({ code: 'P2002' });
+      await expect(db.booking.create({ select: { id: true }, data: { seatId: data.event.seats[0].id, userId: data.bob.id } })).rejects.toMatchObject({ code: 'P2002' });
     });
   }, 60_000);
 });
