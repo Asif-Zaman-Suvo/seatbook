@@ -200,7 +200,7 @@ describe('events and safe error responses', () => {
 
   it('forwards asynchronous failures without exposing internals or returning empty success', async () => {
     vi.spyOn(console, 'error').mockImplementation(() => undefined);
-    vi.spyOn(prisma.event, 'findMany').mockRejectedValueOnce(new Error('secret database connection details'));
+    vi.spyOn(prisma, '$transaction').mockRejectedValueOnce(new Error('secret database connection details'));
     const failed = await request('/events');
     expect(failed.status).toBe(500);
     expect(failed.body).toEqual({ error: { code: 'INTERNAL_ERROR', message: 'Something went wrong' } });

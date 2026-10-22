@@ -4,6 +4,7 @@ import { AppConfig } from './config';
 import authRoutes from './routes/auth';
 import eventRoutes from './routes/events';
 import bookingRoutes from './routes/bookings';
+import holdRoutes from './routes/holds';
 import { requireAuth } from './middleware/auth';
 import { authRateLimit } from './middleware/authRateLimit';
 import { errorHandler, HttpError } from './http';
@@ -23,6 +24,7 @@ export function createApp(config: AppConfig) {
   app.use('/auth', authRateLimit(), authRoutes(config));
   app.use('/events', eventRoutes(authenticate));
   app.use('/bookings', bookingRoutes(authenticate));
+  app.use('/holds', holdRoutes(authenticate));
   app.use((_req, _res, next) => next(new HttpError(404, 'NOT_FOUND', 'Resource not found')));
   app.use(errorHandler);
   return app;

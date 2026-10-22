@@ -16,7 +16,7 @@ export default function bookingRoutes(authenticate: RequestHandler) {
 
   router.get('/mine', asyncHandler(async (req: AuthRequest, res) => {
     const bookings = await prisma.booking.findMany({
-      where: { userId: req.user!.id }, orderBy: { createdAt: 'desc' },
+      where: { userId: req.user!.id, status: { in: ['CONFIRMED', 'CANCELLED'] } }, orderBy: { createdAt: 'desc' },
       select: {
         id: true, status: true, createdAt: true,
         seat: { select: { label: true, event: { select: { id: true, title: true, venue: true, startsAt: true, priceCents: true } } } },

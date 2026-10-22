@@ -2,7 +2,7 @@ import { Router, RequestHandler } from 'express';
 import prisma from '../db';
 import { AuthRequest, requireRole } from '../middleware/auth';
 import { getEventWithSeats, listEvents } from '../services/eventService';
-import { formatPrice, isSeatBookable, seatLabel } from '../utils/helpers';
+import { formatPrice, seatAvailability, seatLabel } from '../utils/helpers';
 import { asyncHandler, HttpError } from '../http';
 import { eventInput, identifier } from '../validation';
 
@@ -13,12 +13,15 @@ export default function eventRoutes(authenticate: RequestHandler) {
   router.get('/:id', asyncHandler(async (req, res) => {
     const event = await getEventWithSeats(identifier(req.params.id));
     if (!event) throw new HttpError(404, 'EVENT_NOT_FOUND', 'Event not found');
-    const now = new Date();
     res.json({
       id: event.id, title: event.title, description: event.description, venue: event.venue,
       startsAt: event.startsAt, priceCents: event.priceCents, price: formatPrice(event.priceCents),
       rows: event.rows, cols: event.cols, organizer: event.organizer,
-      seats: event.seats.map((seat) => ({ id: seat.id, row: seat.row, col: seat.col, label: seat.label, available: isSeatBookable(seat, event, now) })),
+      serverTime: event.serverTime,
+      seats: event.seats.map((seat) => {
+        const availability = seatAvailability(seat, event, event.serverTime);
+        return { id: seat.id, row: seat.row, col: seat.col, label: seat.label, available: availability.status === 'AVAILABLE', ...availability };
+      }),
     });
   }));
 

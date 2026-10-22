@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { formatPrice, isSeatBookable, seatLabel, slugify } from '../src/utils/helpers';
+import { formatPrice, isSeatBookable, seatAvailability, seatLabel, slugify } from '../src/utils/helpers';
 
 describe('helpers', () => {
   it('ignores cancelled history but rejects confirmed seats and started events', () => {
@@ -12,6 +12,29 @@ describe('helpers', () => {
   it('formats cents as dollars', () => {
     expect(formatPrice(1500)).toBe('$15.00');
     expect(formatPrice(0)).toBe('$0.00');
+  });
+
+  it.each([-1, 0, 1])('uses a strict hold deadline at a %d ms offset', (offset) => {
+    const now = new Date('2026-10-23T00:00:00Z');
+    const seat = { bookings: [{ status: 'HELD' as const, expiresAt: new Date(now.getTime() + offset) }] };
+    const event = { startsAt: new Date('2099-01-01T00:00:00Z') };
+    expect(isSeatBookable(seat, event, now)).toBe(offset <= 0);
+    expect(seatAvailability(seat, event, now).status).toBe(offset > 0 ? 'HELD' : 'AVAILABLE');
+  });
+
+  it.each(['EXPIRED', 'RELEASED', 'CANCELLED'] as const)('ignores %s reservation history', (status) => {
+    const now = new Date('2026-10-23T00:00:00Z');
+    expect(isSeatBookable({ bookings: [{ status, expiresAt: new Date('2099-01-01') }] }, { startsAt: new Date('2099-01-01') }, now)).toBe(true);
+  });
+
+  it('keeps confirmed reservations booked after their former hold deadline', () => {
+    const now = new Date('2026-10-23T00:00:00Z');
+    expect(seatAvailability({ bookings: [{ status: 'CONFIRMED', expiresAt: new Date('2020-01-01') }] }, { startsAt: new Date('2099-01-01') }, now).status).toBe('BOOKED');
+  });
+
+  it('closes started events even when a hold has remaining time', () => {
+    const now = new Date('2026-10-23T00:00:00Z');
+    expect(seatAvailability({ bookings: [{ status: 'HELD', expiresAt: new Date('2099-01-01') }] }, { startsAt: now }, now)).toEqual({ status: 'CLOSED', holdExpiresAt: null });
   });
 
   it('labels seats by row letter and column number', () => {

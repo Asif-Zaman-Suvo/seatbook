@@ -24,11 +24,12 @@ export const errorHandler: ErrorRequestHandler = (error: unknown, req, res, _nex
     return;
   }
   if (error instanceof Prisma.PrismaClientKnownRequestError) {
-    if (error.code === 'P2002') {
+    const sqlCode = error.code === 'P2010' ? String(error.meta?.code) : undefined;
+    if (error.code === 'P2002' || sqlCode === '23505') {
       res.status(409).json({ error: { code: 'CONFLICT', message: 'That email or seat is already in use' } });
       return;
     }
-    if (error.code === 'P2003') {
+    if (error.code === 'P2003' || sqlCode === '23503') {
       res.status(409).json({ error: { code: 'CONFLICT', message: 'The referenced resource is no longer available' } });
       return;
     }

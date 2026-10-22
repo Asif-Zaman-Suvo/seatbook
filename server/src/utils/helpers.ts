@@ -8,11 +8,17 @@ export function seatLabel(row: number, col: number): string {
   return `${String.fromCharCode(65 + row)}${col + 1}`;
 }
 
-export function isSeatBookable(seat: { bookings: { status: BookingStatus }[] }, event: { startsAt: Date }, now = new Date()): boolean {
-  if (event.startsAt <= now) {
-    return false;
-  }
-  return !seat.bookings.some((booking) => booking.status === 'CONFIRMED');
+type SeatReservations = { bookings: { status: BookingStatus; expiresAt?: Date | null }[] };
+
+export function seatAvailability(seat: SeatReservations, event: { startsAt: Date }, now: Date) {
+  if (event.startsAt <= now) return { status: 'CLOSED' as const, holdExpiresAt: null };
+  if (seat.bookings.some((booking) => booking.status === 'CONFIRMED')) return { status: 'BOOKED' as const, holdExpiresAt: null };
+  const hold = seat.bookings.find((booking) => booking.status === 'HELD' && booking.expiresAt && booking.expiresAt > now);
+  return hold ? { status: 'HELD' as const, holdExpiresAt: hold.expiresAt! } : { status: 'AVAILABLE' as const, holdExpiresAt: null };
+}
+
+export function isSeatBookable(seat: SeatReservations, event: { startsAt: Date }, now: Date): boolean {
+  return seatAvailability(seat, event, now).status === 'AVAILABLE';
 }
 
 export function slugify(text: string): string {
