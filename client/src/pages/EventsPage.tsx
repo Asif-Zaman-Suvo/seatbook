@@ -1,43 +1,30 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000';
+import { api, errorMessage } from '../api';
+import { EventSummary } from '../types';
 
 export default function EventsPage() {
-  const [events, setEvents] = useState<any[]>([]);
+  const [events, setEvents] = useState<EventSummary[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [search, setSearch] = useState('');
-  const [totalSeatsLeft, setTotalSeatsLeft] = useState(0);
-  const [filtered, setFiltered] = useState<any[]>([]);
+  const [reload, setReload] = useState(0);
+  const totalSeatsLeft = events.reduce((total, event) => total + event.seatsLeft, 0);
+  const filtered = events.filter((event) => `${event.title} ${event.venue}`.toLowerCase().includes(search.toLowerCase()));
 
   useEffect(() => {
-    fetch(`${API_URL}/events`)
-      .then((res) => res.json())
+    const controller = new AbortController();
+    setLoading(true);
+    setError('');
+    api<EventSummary[]>('/events', { signal: controller.signal })
       .then((data) => {
+        if (controller.signal.aborted) return;
         setEvents(data);
-        setFiltered(data);
-        let total = 0;
-        for (let i = 0; i < data.length; i++) {
-          total += data[i].seatsLeft;
-        }
-        setTotalSeatsLeft(total);
-        setLoading(false);
       })
-      .catch(() => {
-        setError('Oops! Something went wrong 😢');
-        setLoading(false);
-      });
-  }, []);
-
-  useEffect(() => {
-    setFiltered(
-      events.filter(
-        (e) =>
-          e.title.toLowerCase().includes(search.toLowerCase()) || e.venue.toLowerCase().includes(search.toLowerCase())
-      )
-    );
-  }, [search, events]);
+      .catch((error) => { if (!controller.signal.aborted) setError(errorMessage(error)); })
+      .finally(() => { if (!controller.signal.aborted) setLoading(false); });
+    return () => controller.abort();
+  }, [reload]);
 
   if (loading) {
     return (
@@ -48,7 +35,9 @@ export default function EventsPage() {
     );
   }
 
-  const featured = filtered[0];
+  if (error) return <div role="alert">{error} <button className="underline" onClick={() => setReload(reload + 1)}>Retry</button></div>;
+
+  const featured = filtered.find((event) => new Date(event.startsAt) > new Date());
 
   return (
     <div>
@@ -115,7 +104,7 @@ export default function EventsPage() {
       <h2 className="text-3xl font-bold mb-6">
         All <span className="gradient-text">Events</span> 🎊
       </h2>
-      <div className="grid grid-cols-3 gap-6">
+      <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
         {filtered.map((event) => (
           <Link to={`/events/${event.id}`} key={event.id}>
             <div className="glass rounded-3xl p-6 hover:scale-105 hover:shadow-2xl hover:shadow-purple-500/20 transition-all duration-300 h-full">

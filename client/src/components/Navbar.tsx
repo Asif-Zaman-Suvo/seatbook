@@ -1,13 +1,13 @@
 import { Link, useNavigate, useLocation } from 'react-router-dom';
+import { clearSession, useUser } from '../auth';
 
 export default function Navbar() {
   const navigate = useNavigate();
   const location = useLocation();
-  const user = JSON.parse(localStorage.getItem('user') || 'null');
+  const user = useUser();
 
   function logout() {
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
+    clearSession();
     navigate('/login');
   }
 
@@ -26,7 +26,7 @@ export default function Navbar() {
           >
             🎉 Events
           </Link>
-          {user && (
+          {user?.role === 'ATTENDEE' && (
             <Link
               to="/my-bookings"
               className={`text-sm font-medium transition-all duration-300 hover:text-[#a855f7] ${

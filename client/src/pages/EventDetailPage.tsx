@@ -1,72 +1,74 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { api, ApiError, errorMessage } from '../api';
+import { useUser } from '../auth';
+import { EventDetail, Seat } from '../types';
 
 export default function EventDetailPage() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const [event, setEvent] = useState<any>(null);
-  const [rows, setRows] = useState<any[][]>([]);
-  const [selectedSeat, setSelectedSeat] = useState<any>(null);
-  const [availableCount, setAvailableCount] = useState(0);
+  const [event, setEvent] = useState<EventDetail | null>(null);
+  const [selectedSeat, setSelectedSeat] = useState<Seat | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [pending, setPending] = useState(false);
+  const [reload, setReload] = useState(0);
+  const controller = useRef<AbortController | null>(null);
+  const user = useUser();
   const [toast, setToast] = useState<{ type: string; message: string } | null>(null);
 
-  const fetchEvent = () => {
-    fetch(`http://localhost:4000/events/${id}`)
-      .then((res) => res.json())
-      .then((data) => {
-        setEvent(data);
-
-        const grouped: any[][] = [];
-        data.seats.forEach((seat: any) => {
-          if (!grouped[seat.row]) grouped[seat.row] = [];
-          grouped[seat.row].push(seat);
-        });
-        setRows(grouped);
-
-        let count = 0;
-        data.seats.forEach((seat: any) => {
-          if (seat.available) count++;
-        });
-        setAvailableCount(count);
-      });
-  };
-
-  useEffect(() => {
-    fetchEvent();
+  const fetchEvent = useCallback(async (signal: AbortSignal) => {
+    const data = await api<EventDetail>(`/events/${id}`, { signal });
+    if (!signal.aborted) setEvent(data);
   }, [id]);
 
+  useEffect(() => {
+    const current = new AbortController();
+    controller.current = current;
+    setLoading(true);
+    setEvent(null);
+    setSelectedSeat(null);
+    setToast(null);
+    setPending(false);
+    setError('');
+    fetchEvent(current.signal)
+      .catch((error) => { if (!current.signal.aborted) setError(errorMessage(error)); })
+      .finally(() => { if (!current.signal.aborted) setLoading(false); });
+    return () => current.abort();
+  }, [fetchEvent, reload]);
+
   const handleBook = async () => {
+    if (pending) return;
     if (!selectedSeat) {
       setToast({ type: 'error', message: 'Please select a seat first! 🪑' });
-      setTimeout(() => setToast(null), 3000);
       return;
     }
 
-    const token = localStorage.getItem('token');
-    if (!token) {
+    if (!user) {
       navigate('/login');
       return;
     }
 
-    const res = await fetch('http://localhost:4000/bookings', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-      body: JSON.stringify({ seatId: selectedSeat.id }),
-    });
-    const data = await res.json();
-
-    if (res.ok) {
-      setToast({ type: 'success', message: `🎉 Woohoo! Seat ${selectedSeat.label} is yours!` });
-      setTimeout(() => setToast(null), 3000);
+    const signal = controller.current!.signal;
+    setPending(true);
+    setError('');
+    try {
+      await api<{ id: number }>('/bookings', { method: 'POST', body: JSON.stringify({ seatId: selectedSeat.id }), signal }, true);
+      if (signal.aborted) return;
+      setToast({ type: 'success', message: `Seat ${selectedSeat.label} is booked.` });
       setSelectedSeat(null);
-      fetchEvent();
-    } else {
-      setToast({ type: 'error', message: '😢 ' + data.error });
-      setTimeout(() => setToast(null), 3000);
-    }
+      await fetchEvent(signal).catch(() => { if (!signal.aborted) setError('Booking confirmed. Reload the page to refresh availability.'); });
+    } catch (error) {
+      if (signal.aborted) return;
+      setToast({ type: 'error', message: errorMessage(error) });
+      if (error instanceof ApiError && error.status === 409) {
+        setSelectedSeat(null);
+        await fetchEvent(signal).catch(() => { if (!signal.aborted) setError('Reload the page to refresh availability.'); });
+      }
+    } finally { if (!signal.aborted) setPending(false); }
   };
 
-  if (!event) {
+  if (loading) {
     return (
       <div className="flex flex-col items-center justify-center py-32">
         <div className="w-16 h-16 border-4 border-[#ec4899] border-t-transparent rounded-full animate-spin"></div>
@@ -75,16 +77,20 @@ export default function EventDetailPage() {
     );
   }
 
-  const price = parseFloat(event.price.replace('$', ''));
-  const serviceFee = price * 0.05;
-  const total = price + serviceFee;
-  const isPast = new Date(event.startsAt) < new Date();
+  if (!event) return <div role="alert">{error || 'Event not found.'} <button className="underline" onClick={() => setReload((value) => value + 1)}>Retry</button></div>;
+  const price = event.priceCents / 100;
+  const isPast = new Date(event.startsAt) <= new Date();
+  const availableCount = event.seats.filter((seat) => seat.available).length;
+  const rows: Seat[][] = [];
+  event.seats.forEach((seat) => { (rows[seat.row] ||= []).push(seat); });
   const percentBooked = Math.round(((event.seats.length - availableCount) / event.seats.length) * 100);
 
   return (
     <div>
+      {error && <p role="alert" className="mb-4 text-red-300">{error}</p>}
       {toast && (
         <div
+          role="status" aria-live="polite"
           className={`fixed top-24 right-6 z-50 px-6 py-4 rounded-2xl shadow-2xl font-medium ${
             toast.type === 'success'
               ? 'bg-gradient-to-r from-[#22c55e] to-[#16a34a]'
@@ -108,8 +114,8 @@ export default function EventDetailPage() {
         </div>
       </div>
 
-      <div className="mt-10 grid grid-cols-3 gap-8">
-        <div className="col-span-2 glass rounded-3xl p-8">
+      <div className="mt-10 grid lg:grid-cols-3 gap-8">
+        <div className="lg:col-span-2 min-w-0 glass rounded-3xl p-8">
           <h2 className="text-2xl font-bold mb-2">
             Choose Your <span className="gradient-text">Perfect Seat</span> 🪑
           </h2>
@@ -117,14 +123,16 @@ export default function EventDetailPage() {
             {availableCount} of {event.seats.length} available · {percentBooked}% booked 🔥
           </p>
           <div className="w-full h-2 rounded-full bg-gradient-to-r from-[#a855f7] to-[#ec4899] mb-10 opacity-60"></div>
-          <div className="space-y-3">
+          <div className="space-y-3 overflow-x-auto">
             {rows.map((row, i) => (
-              <div key={i} className="flex gap-3 justify-center">
-                {row.map((seat: any) => (
-                  <div
+              <div key={i} className="flex gap-3 w-max min-w-full justify-center">
+                {row.map((seat) => (
+                  <button
                     key={seat.id}
+                    type="button" aria-label={`Seat ${seat.label}${seat.available ? '' : ', unavailable'}`} aria-pressed={selectedSeat?.id === seat.id}
+                    disabled={!seat.available || isPast || pending}
                     onClick={() => setSelectedSeat(seat)}
-                    className={`w-12 h-12 rounded-xl flex items-center justify-center text-xs font-bold cursor-pointer transition-all duration-300 hover:scale-110 ${
+                    className={`w-12 h-12 shrink-0 rounded-xl flex items-center justify-center text-xs font-bold transition-all duration-300 focus-visible:outline focus-visible:outline-2 focus-visible:outline-white disabled:cursor-not-allowed ${
                       selectedSeat?.id === seat.id
                         ? 'bg-gradient-to-br from-[#ec4899] to-[#f97316] shadow-lg shadow-pink-500/50 scale-110'
                         : seat.available
@@ -133,7 +141,7 @@ export default function EventDetailPage() {
                     }`}
                   >
                     {seat.label}
-                  </div>
+                  </button>
                 ))}
               </div>
             ))}
@@ -151,22 +159,19 @@ export default function EventDetailPage() {
               <span>Ticket</span>
               <span>${price.toFixed(2)}</span>
             </div>
-            <div className="flex justify-between">
-              <span>Service fee (5%)</span>
-              <span>${serviceFee.toFixed(2)}</span>
-            </div>
             <div className="border-t border-white/10 pt-4 flex justify-between text-xl font-bold text-white">
               <span>Total</span>
-              <span className="gradient-text">${total.toFixed(2)}</span>
+              <span className="gradient-text">${price.toFixed(2)}</span>
             </div>
           </div>
           <button
             onClick={handleBook}
-            className="mt-8 w-full py-4 rounded-2xl bg-gradient-to-r from-[#a855f7] via-[#ec4899] to-[#f97316] font-bold text-lg hover:scale-[1.02] hover:shadow-2xl hover:shadow-pink-500/40 transition-all duration-300"
+            disabled={pending || isPast || !selectedSeat || user?.role === 'ORGANIZER'}
+            className="mt-8 w-full py-4 rounded-2xl bg-gradient-to-r from-[#a855f7] via-[#ec4899] to-[#f97316] font-bold text-lg disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            Book Now 🎟️
+            {pending ? 'Booking…' : isPast ? 'Event ended' : 'Book Now 🎟️'}
           </button>
-          <p className="mt-4 text-center text-xs text-white/40">🔒 Secure checkout · Instant confirmation</p>
+          <p className="mt-4 text-center text-xs text-white/60">{user?.role === 'ORGANIZER' ? 'An attendee account is required to book seats.' : 'Bookings are confirmed immediately.'}</p>
         </div>
       </div>
     </div>
