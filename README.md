@@ -90,9 +90,19 @@ An actual AI mistake: I initially chose frontend Vitest 5 without checking its V
 
 Attendees can hold a seat for exactly ten minutes using PostgreSQL time, recover active holds after refresh/restart, explicitly confirm, or release. Repeated active-hold requests do not extend the deadline. Expired holds stop affecting availability immediately; the next seat mutation reconciles them without a background worker. One partial unique index prevents both competing holds and hold-versus-booking conflicts, with seat-row locks serializing mutations.
 
-The existing immediate-booking endpoint remains available for unheld seats. A hold owner must use its confirmation endpoint; active holds cannot be bypassed through immediate booking. Confirmed hold reservations appear in the existing booking history and support the existing cancellation endpoint. The frontend hold controls/countdown are not implemented yet; they belong to Phase 3.
+The existing immediate-booking endpoint remains available for unheld seats. A hold owner must use its confirmation endpoint; active holds cannot be bypassed through immediate booking. Confirmed hold reservations appear in the existing booking history and support the existing cancellation endpoint.
 
 See [Phase 2 API contracts, migration design, guarantees, verification, and remaining risks](docs/phase-2.md). Its two migrations are additive to the committed migration history and have only been applied to isolated test databases during development. Do not run them against the application database without separate approval.
+
+## Phase 3 attendee holds
+
+Select an available seat and choose **Hold for 10 minutes**. The **Your seat holds** panel stays available across pages: confirm before the deadline to book, or release the seat. Held, booked, and closed seats cannot be selected. Only your own recovered holds are identified as yours; public seat data never identifies another attendee.
+
+The countdown uses the API's database `serverTime`, the original `expiresAt`, and monotonic elapsed time. It does not reset after refresh, navigation, reopening, or changing the computer's clock. Active holds are recovered from `GET /holds/mine`, without a local hold cache. A conservative transport allowance can make the display reach zero slightly early; the backend always makes the final decision.
+
+Availability refreshes after operations and expiry, every 15 seconds while visible, and when the page regains focus, becomes visible, returns online, or is restored. Network failures retain explicit errors and safe retries; a lost confirmation/release response retries the same reservation ID rather than claiming success. Requests time out after ten seconds, including stalled response bodies. Full browser/visual testing and clean application startup verification remain for later phases.
+
+See [Phase 3 implementation, verification, limitations, and proposed commits](docs/phase-3.md).
 
 ## API
 
