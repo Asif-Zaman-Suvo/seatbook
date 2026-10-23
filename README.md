@@ -19,6 +19,8 @@ docker compose up --build
 
 This Compose configuration is for local development, with ports bound to loopback and public demo accounts. The database is migrated and seeded on startup. Keep the application database and its volumes when testing; the separate test project below provides disposable storage.
 
+Demo initialization is atomic and runs only when no users exist. Repeated runs preserve populated databases, including passwords, event dates, booking history, and active holds. Existing partial data from the old seeder requires deliberate reconciliation; startup does not guess ownership, overwrite records, or claim that demo data is complete. See [Phase 4 seed policy and verification](docs/phase-4.md).
+
 **Schema changes:** commit a reviewed migration alongside `schema.prisma`. Use a disposable development database when generating migrations. Container startup regenerates the Prisma client and applies pending migrations. The Phase 1 migration stops on conflicting confirmed bookings, normalized emails, or CHECK violations, reporting the root cause and rolling back all changes. A failed migration requires deliberate reconciliation and Prisma metadata recovery before retrying; see [migration recovery procedures](docs/phase-1.md#migration-diagnostics-and-recovery). Never reset a populated database to resolve this.
 
 The API generates a random local signing secret in `/app/.data/jwt-secret`, persisted in the `api-config` volume. Without Docker it uses `server/.data/jwt-secret`. Production requires a securely supplied `JWT_SECRET` of at least 32 bytes; there is no hardcoded fallback. Changing secrets invalidates sessions. Existing sessions from the original app must sign in again.
@@ -82,7 +84,7 @@ Implemented: JWT configuration/claim validation, current database identity and r
 
 Assumptions: organizer registration is public; bookings are attendee-only; cancellation remains allowed after event start; free tickets are valid; email identity is trimmed and lowercase. Registration passwords require 12 characters and at most 72 UTF-8 bytes. Login preserves existing bcrypt behavior, including short demo passwords and legacy inputs exceeding 72 bytes, without trimming, truncating, or rehashing them. Login input is bounded by the API's 32 KiB JSON body budget (including JSON overhead), with a matching upper bound in validation. Currency remains the existing USD display. The unsupported frontend service fee was removed; no payment functionality exists.
 
-Phase 1 verification is recorded in [docs/phase-1.md](docs/phase-1.md). Full clean-start/seed reliability verification, broader browser testing, launch hardening, and final handover/transcript packaging remain for later phases. Development Compose is not a production deployment configuration. The per-process authentication limiter would need shared enforcement if multiple API instances were deployed.
+Phase 1 verification is recorded in [docs/phase-1.md](docs/phase-1.md). Full clean application startup, broader browser testing, launch hardening, and final handover/transcript packaging remain for later phases. Development Compose is not a production deployment configuration. The per-process authentication limiter would need shared enforcement if multiple API instances were deployed.
 
 An actual AI mistake: I initially chose frontend Vitest 5 without checking its Vite peer range. npm rejected Vite 5. An attempted older compatible Vitest introduced critical transitive advisories, so I checked package metadata and the audit report and moved to patched Vite 6.4.5 with Vitest 5. I did not bypass peer checks with `--force` or rewrite the application. Final verification results are recorded in `docs/phase-1.md`.
 
@@ -103,6 +105,12 @@ The countdown uses the API's database `serverTime`, the original `expiresAt`, an
 Availability refreshes after operations and expiry, every 15 seconds while visible, and when the page regains focus, becomes visible, returns online, or is restored. Network failures retain explicit errors and safe retries; a lost confirmation/release response retries the same reservation ID rather than claiming success. Requests time out after ten seconds, including stalled response bodies. Full browser/visual testing and clean application startup verification remain for later phases.
 
 See [Phase 3 implementation, verification, limitations, and proposed commits](docs/phase-3.md).
+
+## Phase 4 reliability review
+
+The final coverage review added real PostgreSQL seed rollback/interruption/retry and concurrent-initialization tests, seat-lock timeout/retry coverage, cancellation after event start, and organizer-form regressions. The latest run passed 210 tests: 79 frontend, 53 backend unit, and 78 PostgreSQL integration tests, with no failures or skips. Both TypeScript checks and the frontend production build passed.
+
+See [Phase 4 coverage, seed design, startup findings, and remaining risks](docs/phase-4.md). Full application clean-start and browser-to-real-backend verification remain Phase 5; they have not been performed against the existing application database.
 
 ## API
 
