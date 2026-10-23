@@ -286,6 +286,34 @@ describe('expiration, confirmation, release and retry behavior', () => {
 });
 
 describe('database constraints, concurrency and failure recovery', () => {
+  it('returns a safe retryable error on seat lock timeout without acquiring a hold', async () => {
+    const event = await eventWithSeats();
+    const blocker = new PrismaClient();
+    let ready!: () => void, release!: () => void;
+    const locked = new Promise<void>((done) => { ready = done; });
+    const gate = new Promise<void>((done) => { release = done; });
+    const held = blocker.$transaction(async (tx) => {
+      await tx.$queryRaw`SELECT id FROM "Seat" WHERE id = ${event.seats[0].id} FOR UPDATE`;
+      ready();
+      await gate;
+    }, { timeout: 10_000 });
+    try {
+      await Promise.race([locked, held]);
+      const rejected = await post('/holds', { seatId: event.seats[0].id });
+      expect(rejected.status).toBe(503);
+      expect(rejected.body).toEqual({ error: { code: 'SERVICE_UNAVAILABLE', message: 'Service temporarily unavailable. Please retry.' } });
+      expect(await prisma.booking.findMany({ where: { seatId: event.seats[0].id } })).toEqual([]);
+    } finally {
+      release();
+      await held;
+      await blocker.$disconnect();
+    }
+    const retried = await reserve(event.seats[0].id);
+    const stored = await prisma.booking.findMany({ where: { seatId: event.seats[0].id } });
+    expect(stored).toHaveLength(1);
+    expect(stored[0]).toMatchObject({ id: retried.id, userId: alice.id, status: 'HELD' });
+  });
+
   it.each([false, true])('allows one winner among twelve competing attendees (expired predecessor: %s)', async (hasExpiredPredecessor) => {
     const event = await eventWithSeats();
     const predecessor = hasExpiredPredecessor ? await reserve(event.seats[0].id) : null;

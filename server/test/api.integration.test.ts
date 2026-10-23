@@ -221,6 +221,22 @@ describe('events and safe error responses', () => {
 });
 
 describe('booking integrity and ownership', () => {
+  it('allows owner cancellation after event start while keeping the event closed', async () => {
+    const event = await eventWithSeats(true);
+    const booking = await prisma.booking.create({ data: { seatId: event.seats[0].id, userId: alice.id } });
+    expect((await post('/bookings/' + booking.id + '/cancel', {}, bobToken)).status).toBe(404);
+    expect((await post('/bookings/' + booking.id + '/cancel', {}, aliceToken)).status).toBe(200);
+    const cancelled = await prisma.booking.findUniqueOrThrow({ where: { id: booking.id } });
+    expect(cancelled.status).toBe('CANCELLED');
+    expect(cancelled.cancelledAt).toBeInstanceOf(Date);
+    expect((await post('/bookings/' + booking.id + '/cancel', {}, aliceToken)).status).toBe(200);
+    expect(await prisma.booking.findUniqueOrThrow({ where: { id: booking.id } })).toEqual(cancelled);
+    const detail = await request('/events/' + event.id);
+    expect(detail.body.seats[0]).toMatchObject({ status: 'CLOSED', available: false });
+    const history = await request('/bookings/mine', {}, aliceToken);
+    expect(history.body.find((row: { id: number }) => row.id === booking.id)).toMatchObject({ status: 'CANCELLED', seat: 'A1' });
+  });
+
   it('books, scopes history, rejects foreign cancellation, cancels idempotently, and rebooks', async () => {
     const event = await eventWithSeats();
     const seatId = event.seats[0].id;
