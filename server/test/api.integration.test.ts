@@ -69,6 +69,25 @@ afterEach(async () => {
 });
 afterAll(async () => { await prisma.$disconnect(); });
 
+describe('liveness and database readiness', () => {
+  it('reports ready only after connecting to the migrated database', async () => {
+    const ready = await request('/ready');
+    expect(ready.status).toBe(200);
+    expect(ready.body).toEqual({ ok: true });
+    expect(ready.headers.get('cache-control')).toBe('no-store');
+    expect((await request('/health')).status).toBe(200);
+  });
+
+  it('reports a safe retryable failure while preserving process liveness', async () => {
+    vi.spyOn(prisma, '$queryRaw').mockRejectedValueOnce(new Error('private database diagnostic'));
+    const ready = await request('/ready');
+    expect(ready.status).toBe(503);
+    expect(ready.body).toEqual({ error: { code: 'SERVICE_UNAVAILABLE', message: 'Service temporarily unavailable. Please retry.' } });
+    expect((await request('/health')).body).toEqual({ ok: true });
+    expect((await request('/ready')).status).toBe(200);
+  });
+});
+
 describe('authentication and authorization', () => {
   it.each(['ATTENDEE', 'ORGANIZER'] as const)('registers and logs in a %s without exposing password hashes', async (role) => {
     const email = `${randomUUID()}@seatbook.test`;
