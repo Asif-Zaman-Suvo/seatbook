@@ -53,3 +53,42 @@ it('ignores malformed stored user data without crashing', () => {
   localStorage.setItem('user', JSON.stringify({ name: 42 }));
   expect(getUser()).toBeNull();
 });
+
+it('times out a stalled request without clearing the authenticated session', async () => {
+  vi.useFakeTimers();
+  try {
+    vi.stubGlobal('fetch', vi.fn((_url, options: RequestInit) => new Promise((_resolve, reject) => {
+      options.signal!.addEventListener('abort', () => reject(new DOMException('Aborted', 'AbortError')));
+    })));
+    const pending = api('/holds/41/confirm', { method: 'POST' }, true);
+    const rejected = expect(pending).rejects.toThrow('Check the result before retrying');
+    await vi.advanceTimersByTimeAsync(10_000);
+    await rejected;
+    expect(getUser()).toEqual(user);
+  } finally { vi.useRealTimers(); }
+});
+
+it('also bounds a response body that stalls after headers arrive', async () => {
+  vi.useFakeTimers();
+  try {
+    vi.stubGlobal('fetch', vi.fn(async (_url, options: RequestInit) => ({
+      ok: true, status: 200,
+      json: () => new Promise((_resolve, reject) => options.signal!.addEventListener('abort', () => reject(new DOMException('Aborted', 'AbortError')))),
+    })));
+    const rejected = expect(api('/holds/mine', {}, true)).rejects.toThrow('took too long');
+    await vi.advanceTimersByTimeAsync(10_000);
+    await rejected;
+    expect(getUser()).toEqual(user);
+  } finally { vi.useRealTimers(); }
+});
+
+it('preserves caller cancellation instead of displaying it as a network failure', async () => {
+  const controller = new AbortController();
+  vi.stubGlobal('fetch', vi.fn((_url, options: RequestInit) => new Promise((_resolve, reject) => {
+    options.signal!.addEventListener('abort', () => reject(new DOMException('Aborted', 'AbortError')));
+  })));
+  const rejected = expect(api('/events', { signal: controller.signal })).rejects.toMatchObject({ name: 'AbortError' });
+  controller.abort();
+  await rejected;
+  expect(getUser()).toEqual(user);
+});
