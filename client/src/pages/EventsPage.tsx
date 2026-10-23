@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { api, errorMessage } from '../api';
 import { EventSummary } from '../types';
+import { availabilityChanged } from '../holds';
 
 export default function EventsPage() {
   const [events, setEvents] = useState<EventSummary[]>([]);
@@ -13,17 +14,40 @@ export default function EventsPage() {
   const filtered = events.filter((event) => `${event.title} ${event.venue}`.toLowerCase().includes(search.toLowerCase()));
 
   useEffect(() => {
-    const controller = new AbortController();
+    let alive = true;
+    let controller: AbortController | null = null;
+    let revision = 0;
     setLoading(true);
     setError('');
-    api<EventSummary[]>('/events', { signal: controller.signal })
+    const load = () => {
+      controller?.abort();
+      const current = new AbortController();
+      controller = current;
+      const request = ++revision;
+      const valid = () => alive && !current.signal.aborted && request === revision;
+      void api<EventSummary[]>('/events', { signal: current.signal })
       .then((data) => {
-        if (controller.signal.aborted) return;
+        if (!valid()) return;
         setEvents(data);
+        setError('');
       })
-      .catch((error) => { if (!controller.signal.aborted) setError(errorMessage(error)); })
-      .finally(() => { if (!controller.signal.aborted) setLoading(false); });
-    return () => controller.abort();
+      .catch((error) => { if (valid()) setError(errorMessage(error)); })
+      .finally(() => { if (valid()) setLoading(false); });
+    };
+    const sync = () => { if (document.visibilityState !== 'hidden') load(); };
+    load();
+    const timer = window.setInterval(sync, 15_000);
+    window.addEventListener(availabilityChanged, sync);
+    for (const name of ['focus', 'pageshow', 'online']) window.addEventListener(name, sync);
+    document.addEventListener('visibilitychange', sync);
+    return () => {
+      alive = false;
+      controller?.abort();
+      window.clearInterval(timer);
+      window.removeEventListener(availabilityChanged, sync);
+      for (const name of ['focus', 'pageshow', 'online']) window.removeEventListener(name, sync);
+      document.removeEventListener('visibilitychange', sync);
+    };
   }, [reload]);
 
   if (loading) {
@@ -35,7 +59,7 @@ export default function EventsPage() {
     );
   }
 
-  if (error) return <div role="alert">{error} <button className="underline" onClick={() => setReload(reload + 1)}>Retry</button></div>;
+  if (error && !events.length) return <div role="alert">{error} <button className="underline" onClick={() => setReload(reload + 1)}>Retry</button></div>;
 
   const featured = filtered.find((event) => new Date(event.startsAt) > new Date());
 
@@ -51,7 +75,7 @@ export default function EventsPage() {
         <p className="mt-4 text-xl text-white/60 max-w-2xl mx-auto">
           Book your perfect seat in seconds. Seamless, effortless, and powered by cutting-edge technology. 🎉
         </p>
-        <div className="mt-10 flex justify-center gap-6">
+        <div className="mt-10 flex flex-col sm:flex-row items-center sm:items-stretch justify-center gap-6">
           <div className="glass rounded-2xl px-8 py-5">
             <div className="text-3xl font-bold gradient-text">{events.length}</div>
             <div className="text-white/50 text-sm">Events</div>
@@ -74,7 +98,7 @@ export default function EventsPage() {
       </section>
 
       {error && (
-        <div className="mb-8 p-4 rounded-2xl bg-[#ef4444]/20 border border-[#ef4444]/40 text-[#fca5a5]">{error}</div>
+        <div role="alert" className="mb-8 p-4 rounded-2xl bg-[#ef4444]/20 border border-[#ef4444]/40 text-[#fca5a5]">{error} Availability may be out of date. <button className="underline" onClick={() => setReload((value) => value + 1)}>Retry</button></div>
       )}
 
       {featured && (

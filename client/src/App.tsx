@@ -8,6 +8,8 @@ import EventDetailPage from './pages/EventDetailPage';
 import MyBookingsPage from './pages/MyBookingsPage';
 import LoginPage from './pages/LoginPage';
 import CreateEventPage from './pages/CreateEventPage';
+import { HoldProvider } from './holds';
+import SeatHolds from './components/SeatHolds';
 
 function ProtectedRoute({ role, children }: { role: Role; children: ReactNode }) {
   const user = useUser();
@@ -18,9 +20,10 @@ function ProtectedRoute({ role, children }: { role: Role; children: ReactNode })
 
 export default function App() {
   return (
-    <div className="min-h-screen">
+    <HoldProvider><div className="min-h-screen">
       <Navbar />
       <main className="max-w-6xl mx-auto px-6 py-10">
+        <SeatHolds />
         <Routes>
           <Route path="/" element={<EventsPage />} />
           <Route path="/events/new" element={<ProtectedRoute role="ORGANIZER"><CreateEventPage /></ProtectedRoute>} />
@@ -33,6 +36,6 @@ export default function App() {
       <footer className="text-center text-white/40 text-sm py-10">
         Made with 💜 by the Seatbook team · © {new Date().getFullYear()}
       </footer>
-    </div>
+    </div></HoldProvider>
   );
 }

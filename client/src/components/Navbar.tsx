@@ -13,11 +13,11 @@ export default function Navbar() {
 
   return (
     <nav className="sticky top-0 z-50 glass">
-      <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 py-4 flex flex-wrap gap-4 items-center justify-between">
         <Link to="/" className="text-2xl font-extrabold gradient-text">
           ✨ Seatbook
         </Link>
-        <div className="flex items-center gap-8">
+        <div className="flex flex-wrap items-center gap-4 sm:gap-8">
           <Link
             to="/"
             className={`text-sm font-medium transition-all duration-300 hover:text-[#a855f7] ${

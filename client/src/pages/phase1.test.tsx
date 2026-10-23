@@ -8,6 +8,9 @@ import EventDetailPage from './EventDetailPage';
 import { api } from '../api';
 import { saveSession } from '../auth';
 import App from '../App';
+import { HoldProvider } from '../holds';
+import SeatHolds from '../components/SeatHolds';
+import { attendee, testEvent, testHold, testServerTime } from '../test/holdFixtures';
 
 vi.mock('../api', async () => {
   const actual = await vi.importActual<typeof import('../api')>('../api');
@@ -32,6 +35,7 @@ it('lets a new organizer register with the selected role', async () => {
 });
 
 it('shows a failed cancellation and retains the confirmed booking', async () => {
+  saveSession({ token: 'test-token', user: attendee });
   mockedApi.mockResolvedValueOnce([{
     id: 5, status: 'CONFIRMED', seat: 'A1', createdAt: '2026-10-22T00:00:00Z',
     event: { id: 1, title: 'Test event', venue: 'Dhaka', startsAt: '2099-01-01T00:00:00Z', priceCents: 1500, price: '$15.00' },
@@ -69,6 +73,7 @@ it('retains the registration password limit when switching from login', () => {
 });
 
 it('excludes cancelled bookings from upcoming and ticket totals', async () => {
+  saveSession({ token: 'test-token', user: attendee });
   mockedApi.mockResolvedValue([{
     id: 5, status: 'CANCELLED', seat: 'A1', createdAt: '2026-10-22T00:00:00Z',
     event: { id: 1, title: 'Cancelled event', venue: 'Dhaka', startsAt: '2099-01-01T00:00:00Z', priceCents: 1500, price: '$15.00' },
@@ -90,29 +95,33 @@ it('renders an event-list failure with a retry instead of an empty success', asy
 
 it('renders an event-detail failure instead of leaving the loading spinner', async () => {
   mockedApi.mockRejectedValue(new Error('Event not found'));
-  render(<MemoryRouter><EventDetailPage /></MemoryRouter>);
+  render(<MemoryRouter><HoldProvider><EventDetailPage /></HoldProvider></MemoryRouter>);
   expect((await screen.findByRole('alert')).textContent).toContain('Event not found');
   expect(screen.queryByText('Loading event... 🎭')).toBeNull();
 });
 
-it('books an available seat, disables occupied seats, and refreshes availability', async () => {
-  const event = {
-    id: 1, title: 'Test event', description: '', venue: 'Dhaka', startsAt: '2099-01-01T00:00:00Z',
-    priceCents: 1500, price: '$15.00', rows: 1, cols: 2, organizer: { id: 2, name: 'Organizer' },
-    seats: [{ id: 10, row: 0, col: 0, label: 'A1', available: true }, { id: 11, row: 0, col: 1, label: 'A2', available: false }],
-  };
+it('holds then confirms an available seat, disables occupied seats, and refreshes availability', async () => {
+  let held = false, booked = false;
+  const hold = testHold();
   saveSession({ token: 'test-token', user: { id: 1, email: 'alice@example.com', name: 'Alice', role: 'ATTENDEE' } });
-  mockedApi.mockResolvedValueOnce(event).mockResolvedValueOnce({ id: 20 })
-    .mockResolvedValueOnce({ ...event, seats: event.seats.map((seat) => ({ ...seat, available: false })) });
-  render(<MemoryRouter initialEntries={['/events/1']}><Routes><Route path="/events/:id" element={<EventDetailPage />} /></Routes></MemoryRouter>);
-  const available = await screen.findByRole('button', { name: 'Seat A1' });
-  expect((screen.getByRole('button', { name: 'Seat A2, unavailable' }) as HTMLButtonElement).disabled).toBe(true);
+  mockedApi.mockImplementation(async (path, options) => {
+    if (path === '/holds/mine') return { holds: held ? [hold] : [], serverTime: testServerTime };
+    if (path === '/events/1') return { ...testEvent, seats: testEvent.seats.map((seat) => seat.id === 10 && (held || booked) ? { ...seat, available: false, status: booked ? 'BOOKED' : 'HELD', holdExpiresAt: held ? hold.expiresAt : null } : seat) };
+    if (path === '/holds' && options?.method === 'POST') { held = true; return { hold, serverTime: testServerTime }; }
+    if (path === '/holds/41/confirm') { held = false; booked = true; return { hold: { ...hold, status: 'CONFIRMED' }, booking: { id: 41, status: 'CONFIRMED' }, serverTime: testServerTime }; }
+    throw new Error('Unexpected request ' + path);
+  });
+  render(<MemoryRouter initialEntries={['/events/1']}><HoldProvider><SeatHolds /><Routes><Route path="/events/:id" element={<EventDetailPage />} /></Routes></HoldProvider></MemoryRouter>);
+  const available = await screen.findByRole('button', { name: 'Seat A1, available' });
+  expect((screen.getByRole('button', { name: 'Seat A3, booked' }) as HTMLButtonElement).disabled).toBe(true);
   fireEvent.click(available);
-  fireEvent.click(screen.getByRole('button', { name: /Book Now/ }));
+  fireEvent.click(screen.getByRole('button', { name: 'Hold for 10 minutes' }));
+  fireEvent.click(await screen.findByRole('button', { name: 'Confirm seat A1' }));
   await screen.findByText('Seat A1 is booked.');
-  expect(mockedApi.mock.calls[1][0]).toBe('/bookings');
-  expect(JSON.parse(mockedApi.mock.calls[1][1]!.body as string)).toEqual({ seatId: 10 });
-  await screen.findByRole('button', { name: 'Seat A1, unavailable' });
+  const created = mockedApi.mock.calls.find(([path]) => path === '/holds')!;
+  expect(JSON.parse(created[1]!.body as string)).toEqual({ seatId: 10 });
+  expect(mockedApi.mock.calls.some(([path]) => path === '/bookings')).toBe(false);
+  await screen.findByRole('button', { name: 'Seat A1, booked' });
   expect(screen.queryByText(/Service fee/)).toBeNull();
 });
 
