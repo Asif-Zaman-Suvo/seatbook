@@ -1,13 +1,14 @@
 # Seatbook
 
-Seat booking for small venues. Organizers publish an event with a seat grid, attendees pick a seat and book it.
+Seat booking for small venues. Organizers create events with seat grids and ticket prices. Attendees browse events, hold an available seat for ten minutes, then confirm or release it. Confirmed bookings appear in booking history and can be cancelled.
 
-## Stack
+This take-home preserves the existing registration, event creation, booking, history, and cancellation features while adding exclusive holds and security/reliability improvements. Payments, email, notifications, password reset, 2FA, and deployment infrastructure are outside scope.
 
-- **server/**: Node, Express, TypeScript, Prisma, Postgres
-- **client/**: React, Vite, TypeScript, Tailwind
+**Stack:** `server/` uses Node, Express, TypeScript, Prisma, and PostgreSQL; `client/` uses React, Vite, TypeScript, React Router, and Tailwind.
 
-## Run it
+## Run locally
+
+With Docker Desktop running and the default ports available:
 
 ```bash
 docker compose up --build
@@ -15,21 +16,17 @@ docker compose up --build
 
 - App: http://localhost:5173
 - API: http://localhost:4000
-- Postgres: `localhost:5434` (user / password / db: `seatbook`)
+- PostgreSQL: `localhost:5434` (user / password / database: `seatbook`)
 
-This Compose configuration is for local development, with ports bound to loopback and public demo accounts. The database is migrated and seeded on startup. Keep the application database and its volumes when testing; the separate test project below provides disposable storage.
+Compose is a local development configuration with loopback ports and public demo credentials. Startup generates the Prisma client, applies migrations, seeds an empty database, and starts the API. The client waits for API readiness. Database state and the development signing secret persist in separate named volumes.
 
-Demo initialization is atomic and runs only when no users exist. Repeated runs preserve populated databases, including passwords, event dates, booking history, and active holds. Existing partial data from the old seeder requires deliberate reconciliation; startup does not guess ownership, overwrite records, or claim that demo data is complete. See [Phase 4 seed policy and verification](docs/phase-4.md).
+Seeding is atomic and runs only when no users exist. Repeated runs preserve populated databases, including passwords, dates, bookings, and holds. Legacy partial demo data requires deliberate reconciliation; startup preserves it without claiming completeness. See [seed policy and verification](docs/phase-4.md).
 
-**Schema changes:** commit a reviewed migration alongside `schema.prisma`. Use a disposable development database when generating migrations. Container startup regenerates the Prisma client and applies pending migrations. The Phase 1 migration stops on conflicting confirmed bookings, normalized emails, or CHECK violations, reporting the root cause and rolling back all changes. A failed migration requires deliberate reconciliation and Prisma metadata recovery before retrying; see [migration recovery procedures](docs/phase-1.md#migration-diagnostics-and-recovery). Never reset a populated database to resolve this.
+**Existing databases:** review pending migrations, take a backup, and rehearse on a copy before starting an upgrade. Conflicting confirmed bookings, normalized emails, or invalid legacy values stop the integrity migration and roll back its changes. Follow the [migration diagnostics and Prisma recovery procedure](docs/phase-1.md#migration-diagnostics-and-recovery); never reset a populated database or remove its volumes to bypass a failure. Commit a reviewed migration alongside each schema change, generating it against a disposable database.
 
-The API generates a random local signing secret in `/app/.data/jwt-secret`, persisted in the `api-config` volume. Without Docker it uses `server/.data/jwt-secret`. Production requires a securely supplied `JWT_SECRET` of at least 32 bytes; there is no hardcoded fallback. Changing secrets invalidates sessions. Existing sessions from the original app must sign in again.
+### Demo accounts
 
-Use Node 24 for local development and tests, matching both Docker images. Browser requests use `VITE_API_URL`; the API permits the configured `CLIENT_ORIGIN` (default `http://localhost:5173`).
-
-### Seeded accounts
-
-All passwords are `password123`.
+All demo passwords are `password123`.
 
 | Email | Role |
 |---|---|
@@ -37,82 +34,131 @@ All passwords are `password123`.
 | alice@seatbook.test | Attendee |
 | bob@seatbook.test | Attendee |
 
+### Configuration
+
+Use Node 24 for local development and tests, matching the Docker images.
+
+| Variable | Used by | Configuration |
+|---|---|---|
+| `DATABASE_URL` | Server / Prisma | Compose uses its internal PostgreSQL service; host setup uses `server/.env`, with PostgreSQL on port 5434 |
+| `PORT` | Server | Default `4000` |
+| `JWT_SECRET` | Server | Production requires a securely supplied secret of at least 32 bytes |
+| `CLIENT_ORIGIN` | Server | Single permitted browser origin; default `http://localhost:5173` |
+| `VITE_API_URL` | Client | API URL; default `http://localhost:4000` |
+
+Local development generates a random signing secret in `/app/.data/jwt-secret`, persisted by the `api-config` volume; host development uses `server/.data/jwt-secret`. There is no hardcoded signing fallback. Changing the secret invalidates existing sessions; sessions issued by the original application require a new login.
+
 ### Without Docker
 
+Use Node 24 and a running PostgreSQL instance. For a fresh setup, open a terminal from the repository root:
+
 ```bash
-cd server && cp .env.example .env && npm install && npm run db:migrate && npm run db:seed && npm run dev
-cd client && npm install && npm run dev
+cd server
+cp .env.example .env
+npm install
+npx prisma generate
+npm run db:migrate
+npm run db:seed
+npm run dev
 ```
 
-You need a Postgres running at the `DATABASE_URL` in `server/.env`.
+Retain an existing `.env` instead of overwriting it. Set its `DATABASE_URL` to the intended database before migrating or seeding. Regenerate Prisma after schema changes to avoid stale generated types.
 
-## Scripts
+In a second terminal, from the repository root:
 
-| | server | client |
-|---|---|---|
-| `npm run dev` | API with reload | Vite dev server |
-| `npm run typecheck` | `tsc --noEmit` | `tsc --noEmit` |
-| `npm test` | Vitest unit tests | Vitest + jsdom component/API tests |
-| `npm run test:integration` | HTTP + populated migration/recovery tests on real PostgreSQL | — |
+```bash
+cd client
+npm install
+npm run dev
+```
 
-## Isolated PostgreSQL regression tests
+## What changed and why
 
-From the repository root:
+| Problem | Change and resulting behavior |
+|---|---|
+| Insecure identity handling and cancellation authorization | Validated JWTs, current database roles, and owner-scoped operations prevent forged/stale privileges and foreign cancellations |
+| Competing requests could double-book | Seat-row transactions and database uniqueness allow one live reservation per seat |
+| No temporary reservation | Persistent ten-minute holds support explicit confirmation, release, expiry, and recovery |
+| Stale responses and misleading UI feedback | Session isolation, bounded requests, pending controls, and server acknowledgements prevent private-state leaks and false success |
+| Interrupted or concurrent demo initialization | One locked transaction creates the complete dataset or rolls back; repeat runs preserve existing records |
+| Frontend could start before the API | Database-backed readiness and Compose health ordering gate client startup |
+
+## How ten-minute holds work
+
+Select an AVAILABLE seat and choose **Hold for 10 minutes**. Selection alone reserves nothing. After server acknowledgement, the **Your seat holds** panel shows the event, seat, countdown, and confirm/release controls across pages. HELD, BOOKED, and CLOSED seats are unavailable for selection; public seat data never identifies another attendee.
+
+```text
+AVAILABLE -> HELD -> CONFIRMED -> CANCELLED -> AVAILABLE
+               +-> RELEASED -> AVAILABLE
+               +-> EXPIRED  -> AVAILABLE
+```
+
+`AVAILABLE` is derived. Holds use the existing `Booking` table; confirmation keeps the same reservation ID. A partial unique index permits at most one HELD or CONFIRMED row per seat. All seat mutations lock that seat row, read PostgreSQL time after lock waits, and reconcile expired holds inside a transaction. Confirmation checks database time again in its UPDATE. Database constraints enforce the exact ten-minute timestamp interval.
+
+Expired holds stop affecting availability immediately, even before their stored status is reconciled. No Redis, cron, queue, or worker is required. Repeated own-hold requests return the original deadline. Only the owner can confirm or release; confirmation/release retries are idempotent. A confirmed booking no longer expires at its former hold deadline.
+
+The countdown uses backend `serverTime`, the original `expiresAt`, and monotonic `performance.now()` elapsed time, with the request duration subtracted conservatively. It can reach zero slightly early; the backend decides eligibility. Refresh, navigation, or authenticated reopening recovers active holds from `GET /holds/mine` without resetting deadlines. Availability refreshes after operations/expiry, every 15 seconds while visible, and on focus, visibility, online, and page-restoration events.
+
+Requests time out after ten seconds, including stalled response bodies. Uncertain confirmation/release responses retain an explicit same-ID retry rather than claiming success. Existing `POST /bookings` remains compatible for unheld seats; an active hold, including the caller's own, must use its confirmation endpoint. Confirmed holds use the existing booking history and cancellation flow. See [backend contracts](docs/phase-2.md) and [frontend synchronization](docs/phase-3.md).
+
+## Security and reliability improvements
+
+- JWT validation restricts algorithm, issuer, audience, subject, and expiry; authorization reads the current database identity/role. Authentication attempts are throttled per API process.
+- Attendee operations enforce ownership; foreign hold/booking IDs return controlled errors. Password hashes and SQL diagnostics are excluded from public responses.
+- Shared input validation, a 32 KiB JSON budget, foreign keys, CHECK constraints, and reservation indexes protect application and database boundaries. Errors use consistent HTTP statuses and an `error` object containing `code` and `message`.
+- Token-scoped 401 handling, aborted stale reads, session guards, and token-keyed history prevent session A's results or feedback from appearing under session B. Cancellation is idempotent and preserves history.
+- `/health` reports process liveness. `/ready` checks access to the four core tables, returning 200 when ready or a safe 503 on failure. Compose waits for PostgreSQL health, then API readiness, before client startup. Runtime health failure does not automatically restart services.
+
+## Testing and verification
+
+Recorded Phase 5 verification, 23–24 October 2026, used Node 24 containers and isolated PostgreSQL 16:
+
+| Automated suite | Passed | Failed | Skipped/pending/todo |
+|---|---:|---:|---:|
+| Frontend | 79 | 0 | 0 |
+| Backend unit | 53 | 0 | 0 |
+| PostgreSQL integration | 80 | 0 | 0 |
+| **Total** | **212** | **0** | **0** |
+
+Both TypeScript checks, the frontend production build, and `git diff --check` passed. Coverage includes authentication/ownership, session privacy, expiration, transaction rollback, migration preservation/recovery, seed interruption/retry, and concurrency with persisted database-state assertions. Twelve competing booking requests produce one successful booking and eleven conflicts, with the stored winner matched to its response. These are test counts, not a measured code-coverage percentage.
+
+**17 separate real Chrome checks passed**, with no JavaScript exceptions, against the actual frontend, API, and PostgreSQL. They cover organizer/attendee flows, exclusivity, confirmation/cancellation, release/expiry, concurrent requests, 375px layout, refresh/reopening, API restart, and database outage/recovery. Readiness returned 503 during the isolated database outage and 200 after recovery. Frontend component tests use mocked APIs; the Phase 5 browser checks did not. Expiry uses isolated timestamp fixtures preserving the ten-minute interval, rather than a natural ten-minute wait.
+
+**Clean-start evidence:** a fresh isolated Compose project created new volumes, applied all four migrations, seeded 3 users / 3 events / 79 seats / 4 bookings, and started the frontend after API readiness. The base configuration also validates. **Actual fresh-environment execution of the exact unqualified `docker compose up --build` remains pending.** The successful isolated run used override files and alternate ports to protect the existing application; it does not prove execution of the base development bind mounts. Browser verification used Vite development serving; the production bundle was built separately. Full evidence and limitations are in [Phase 5](docs/phase-5.md); local browser artifacts are temporary, not a committed portable E2E suite.
+
+### Reproduce automated tests
+
+From the repository root, with test port 55435 available:
 
 ```bash
 docker compose -p seatbook-phase1-tests -f docker-compose.test.yml run --build --rm server-tests
 docker compose -p seatbook-phase1-tests -f docker-compose.test.yml run --build --rm client-tests
 ```
 
-This runs the backend typecheck, unit tests, migrations, and integration tests inside Node 24. The test database has separate credentials, a separate Docker network, port 55435, and temporary storage. It never mounts the application's `db-data` volume. Migration tests additionally create randomly named databases in that isolated PostgreSQL instance, deploy the original schema, populate legacy fixtures, then exercise upgrade, rollback, and recovery using the real Prisma CLI. Those fixture databases are dropped after each test.
+The services run backend typechecking/unit/integration tests and frontend tests/typechecking/production build. Their PostgreSQL instance has separate credentials/network and tmpfs storage; it never mounts the application's `db-data`. The integration harness requires database/user `seatbook_test`; migration and seed fixtures create and drop guarded, randomly named databases only within that isolated instance. Inspect project identity and mounts before fixture execution or cleanup.
 
-For a host-side test run:
+For host-side integration tests:
 
 ```bash
 docker compose -p seatbook-phase1-tests -f docker-compose.test.yml up -d --wait db
 cd server
+npx prisma generate
 TEST_DATABASE_URL=postgresql://seatbook_test:seatbook_test@127.0.0.1:55435/seatbook_test npm run test:integration
 ```
 
-The harness requires `TEST_DATABASE_URL` and refuses databases/users other than `seatbook_test`. To stop the test project, run `docker compose -p seatbook-phase1-tests -f docker-compose.test.yml down` from the repository root. This discards **only test** temporary storage.
+From the repository root, `docker compose -p seatbook-phase1-tests -f docker-compose.test.yml down` stops only that test project and discards its temporary database storage. Do not target the application project or remove its volumes.
 
-From `client/`, run `npm test` and `npm run build` for frontend verification.
+| Script | Server | Client |
+|---|---|---|
+| `npm run dev` | API with reload | Vite dev server |
+| `npm run typecheck` | `tsc --noEmit` | `tsc --noEmit` |
+| `npm test` | Vitest unit tests | Vitest + jsdom component/API tests |
+| `npm run test:integration` | Real PostgreSQL HTTP, hold/concurrency, migration, and seed tests | — |
+| `npm run build` | — | TypeScript check and Vite production build |
 
-## Phase 1 review status
+## API reference
 
-Implemented: JWT configuration/claim validation, current database identity and role checks, owner-only cancellation, input validation, safe errors, authentication throttling, consistent seat availability, PostgreSQL constraints, transactional booking/cancellation, organizer registration, and frontend request/error handling. A row lock serializes seat mutations; a partial unique index independently prevents two confirmed bookings for one seat. Cancellation is idempotent and preserves history.
-
-Assumptions: organizer registration is public; bookings are attendee-only; cancellation remains allowed after event start; free tickets are valid; email identity is trimmed and lowercase. Registration passwords require 12 characters and at most 72 UTF-8 bytes. Login preserves existing bcrypt behavior, including short demo passwords and legacy inputs exceeding 72 bytes, without trimming, truncating, or rehashing them. Login input is bounded by the API's 32 KiB JSON body budget (including JSON overhead), with a matching upper bound in validation. Currency remains the existing USD display. The unsupported frontend service fee was removed; no payment functionality exists.
-
-Phase 1 verification is recorded in [docs/phase-1.md](docs/phase-1.md). Full clean application startup, broader browser testing, launch hardening, and final handover/transcript packaging remain for later phases. Development Compose is not a production deployment configuration. The per-process authentication limiter would need shared enforcement if multiple API instances were deployed.
-
-An actual AI mistake: I initially chose frontend Vitest 5 without checking its Vite peer range. npm rejected Vite 5. An attempted older compatible Vitest introduced critical transitive advisories, so I checked package metadata and the audit report and moved to patched Vite 6.4.5 with Vitest 5. I did not bypass peer checks with `--force` or rewrite the application. Final verification results are recorded in `docs/phase-1.md`.
-
-## Phase 2 backend holds
-
-Attendees can hold a seat for exactly ten minutes using PostgreSQL time, recover active holds after refresh/restart, explicitly confirm, or release. Repeated active-hold requests do not extend the deadline. Expired holds stop affecting availability immediately; the next seat mutation reconciles them without a background worker. One partial unique index prevents both competing holds and hold-versus-booking conflicts, with seat-row locks serializing mutations.
-
-The existing immediate-booking endpoint remains available for unheld seats. A hold owner must use its confirmation endpoint; active holds cannot be bypassed through immediate booking. Confirmed hold reservations appear in the existing booking history and support the existing cancellation endpoint.
-
-See [Phase 2 API contracts, migration design, guarantees, verification, and remaining risks](docs/phase-2.md). Its two migrations are additive to the committed migration history and have only been applied to isolated test databases during development. Do not run them against the application database without separate approval.
-
-## Phase 3 attendee holds
-
-Select an available seat and choose **Hold for 10 minutes**. The **Your seat holds** panel stays available across pages: confirm before the deadline to book, or release the seat. Held, booked, and closed seats cannot be selected. Only your own recovered holds are identified as yours; public seat data never identifies another attendee.
-
-The countdown uses the API's database `serverTime`, the original `expiresAt`, and monotonic elapsed time. It does not reset after refresh, navigation, reopening, or changing the computer's clock. Active holds are recovered from `GET /holds/mine`, without a local hold cache. A conservative transport allowance can make the display reach zero slightly early; the backend always makes the final decision.
-
-Availability refreshes after operations and expiry, every 15 seconds while visible, and when the page regains focus, becomes visible, returns online, or is restored. Network failures retain explicit errors and safe retries; a lost confirmation/release response retries the same reservation ID rather than claiming success. Requests time out after ten seconds, including stalled response bodies. Full browser/visual testing and clean application startup verification remain for later phases.
-
-See [Phase 3 implementation, verification, limitations, and proposed commits](docs/phase-3.md).
-
-## Phase 4 reliability review
-
-The final coverage review added real PostgreSQL seed rollback/interruption/retry and concurrent-initialization tests, seat-lock timeout/retry coverage, cancellation after event start, and organizer-form regressions. The latest run passed 210 tests: 79 frontend, 53 backend unit, and 78 PostgreSQL integration tests, with no failures or skips. Both TypeScript checks and the frontend production build passed.
-
-See [Phase 4 coverage, seed design, startup findings, and remaining risks](docs/phase-4.md). Full application clean-start and browser-to-real-backend verification remain Phase 5; they have not been performed against the existing application database.
-
-## API
+Send authenticated requests with `Authorization: Bearer <token>`. The API enforces current roles and ownership; frontend route guards are additional UI controls.
 
 | Method | Path | Auth | What it does |
 |---|---|---|---|
@@ -122,11 +168,57 @@ See [Phase 4 coverage, seed design, startup findings, and remaining risks](docs/
 | GET | `/events/:id` | none | One event with its seat map |
 | POST | `/events` | organizer | Create an event and its seats |
 | POST | `/bookings` | attendee | Immediately book an unheld seat |
-| GET | `/bookings/mine` | attendee | Your bookings |
-| POST | `/bookings/:id/cancel` | attendee | Cancel a booking |
+| GET | `/bookings/mine` | attendee | Your confirmed/cancelled bookings |
+| POST | `/bookings/:id/cancel` | attendee | Cancel your booking; repeating cancellation is safe |
 | POST | `/holds` | attendee | Hold a seat; reuse an existing own active hold without extending it |
 | GET | `/holds/mine` | attendee | Recover your active holds and server time |
 | POST | `/holds/:id/confirm` | attendee | Confirm your hold; retries return the same booking |
 | POST | `/holds/:id/release` | attendee | Release your hold; repeated release is safe |
+| GET | `/health` | none | Process liveness |
+| GET | `/ready` | none | Core database readiness; 503 when unavailable |
 
-Send the token as `Authorization: Bearer <token>`.
+Hold creation accepts `{ "seatId": 12 }`, returning 201 for a new hold or 200 for an existing own active hold. Recovery and mutation responses include `serverTime`; detailed payloads and error codes are in [Phase 2 API contracts](docs/phase-2.md#api-contracts).
+
+## Assumptions and known limitations
+
+- Organizer registration is public; only attendees book/hold seats. Multiple holds per attendee are allowed without a quota. Events close at their start time, which can end confirmation eligibility before a hold's ten-minute deadline.
+- Cancellation remains allowed after event start. Free tickets are valid; prices retain the existing USD display. No payment is collected, and the unsupported frontend service fee was removed.
+- Emails are trimmed/lowercase. New passwords require at least 12 characters and at most 72 UTF-8 bytes. Login preserves existing bcrypt behavior, including short demo passwords and legacy inputs over 72 bytes, within the 32 KiB JSON request budget; credentials are not trimmed, truncated, or rehashed on login.
+- Availability is a polling snapshot. Another user's change may take one polling interval plus network delay to appear, but every mutation rechecks database state.
+- Browsers can throttle timers or pause during sleep. Focus/visibility synchronization refreshes the sample; the backend always rechecks expiry. Safari/Firefox, physical devices, screen readers, and long OS sleep/resume were not fully verified.
+- Legacy partial demo data needs reviewed repair. Readiness checks core table access, not every schema constraint or write path; migration/integration tests provide separate checks.
+
+## Before production launch
+
+These are launch considerations, separate from the remaining assignment submission work:
+
+- Supply a strong production `JWT_SECRET`, remove public demo credentials, and review HTTPS, XSS protection, and the current seven-day localStorage bearer-token policy.
+- Review public organizer access and hold-abuse limits. If using multiple API instances, replace process-local authentication throttling with shared enforcement or an appropriate edge policy.
+- Reassess the [documented dependency advisories and reachability](docs/phase-1.md#dependency-review-retained-from-the-follow-up-audit), applying reviewed compatible fixes. No current clean-audit claim is made.
+- Rehearse backups/restores and populated migrations, including table-lock impact and deliberate conflict reconciliation. Review operational monitoring, expected load, accessibility, and the additional browser cases above. Compose still runs development servers; deployment infrastructure is outside this assignment.
+
+## Weakest part of the implementation
+
+The frontend hold coordinator in `client/src/holds.tsx` is the most complex component to maintain: it coordinates session changes, overlapping reads/mutations, expiry, and uncertain network responses. Regression tests cover these races, but uncertain-action retry state is held only in memory. After reopening, active holds recover from the server; completed confirmations must be checked in booking history. Reservations remain durable in PostgreSQL. A future improvement would make the frontend state transitions more explicit while preserving the API contracts.
+
+## One place AI was wrong
+
+AI initially paired Vitest 5 with the existing Vite 5 frontend without checking peer compatibility. npm rejected the combination. An older compatible runner then exposed critical transitive advisories. Reviewing package metadata and audit results led to Vite 6.4.5 with Vitest 5, followed by Docker installation, tests, TypeScript checks, and the production build. No `--force` bypass was used. This genuine incident is recorded in [Phase 1](docs/phase-1.md#genuine-ai-mistakes-recorded).
+
+## Remaining assignment submission work
+
+- Complete the exact standard-command fresh-start check on a separate safe environment without touching the existing application database.
+- Export genuine AI development conversations/screenshots into `ai-transcripts/`; packaging has not started, and phase summaries are not substitutes for those records.
+- Review the final handover, retain incremental Git history without squashing, and submit the repository link through the supplied form. Ensure the submitted repository is public or private with `adar2378` added. The deadline is 30 October 2026, end of day Bangladesh time.
+
+## Detailed implementation notes
+
+| Document | Evidence |
+|---|---|
+| [Phase 1](docs/phase-1.md) | Security hardening, booking integrity, validation, dependency assessment, migration recovery |
+| [Phase 2](docs/phase-2.md) | Hold schema, API contracts, locking, database time, idempotency, populated migrations |
+| [Phase 3](docs/phase-3.md) | Frontend synchronization, countdown, session privacy, accessibility, responsive layout |
+| [Phase 4](docs/phase-4.md) | Atomic seeding, interruption/retry, preservation, added regressions |
+| [Phase 5](docs/phase-5.md) | Readiness, isolated fresh startup, 212 tests, 17 real browser checks, verification limits |
+
+The phase documents record their historical verification checkpoints; this README consolidates the completed implementation and remaining handover work.
