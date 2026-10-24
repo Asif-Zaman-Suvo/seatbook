@@ -1,0 +1,1107 @@
+{
+  "numTotalTestSuites": 13,
+  "numPassedTestSuites": 13,
+  "numFailedTestSuites": 0,
+  "numPendingTestSuites": 0,
+  "numTotalTests": 80,
+  "numPassedTests": 80,
+  "numFailedTests": 0,
+  "numPendingTests": 0,
+  "numTodoTests": 0,
+  "snapshot": {
+    "added": 0,
+    "failure": false,
+    "filesAdded": 0,
+    "filesRemoved": 0,
+    "filesRemovedList": [],
+    "filesUnmatched": 0,
+    "filesUpdated": 0,
+    "matched": 0,
+    "total": 0,
+    "unchecked": 0,
+    "uncheckedKeysByFile": [],
+    "unmatched": 0,
+    "updated": 0,
+    "didUpdate": false
+  },
+  "startTime": 1792774702564,
+  "success": true,
+  "testResults": [
+    {
+      "assertionResults": [
+        {
+          "ancestorTitles": [
+            "liveness and database readiness"
+          ],
+          "fullName": "liveness and database readiness reports ready only after connecting to the migrated database",
+          "status": "passed",
+          "title": "reports ready only after connecting to the migrated database",
+          "duration": 29.83554099999992,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [
+            "liveness and database readiness"
+          ],
+          "fullName": "liveness and database readiness reports a safe retryable failure while preserving process liveness",
+          "status": "passed",
+          "title": "reports a safe retryable failure while preserving process liveness",
+          "duration": 14.740542000000005,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [
+            "authentication and authorization"
+          ],
+          "fullName": "authentication and authorization registers and logs in a ATTENDEE without exposing password hashes",
+          "status": "passed",
+          "title": "registers and logs in a ATTENDEE without exposing password hashes",
+          "duration": 232.45933300000002,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [
+            "authentication and authorization"
+          ],
+          "fullName": "authentication and authorization registers and logs in a ORGANIZER without exposing password hashes",
+          "status": "passed",
+          "title": "registers and logs in a ORGANIZER without exposing password hashes",
+          "duration": 220.988792,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [
+            "authentication and authorization"
+          ],
+          "fullName": "authentication and authorization preserves legacy login passwords and returns the same credential error",
+          "status": "passed",
+          "title": "preserves legacy login passwords and returns the same credential error",
+          "duration": 215.61729100000002,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [
+            "authentication and authorization"
+          ],
+          "fullName": "authentication and authorization rejects invalid authentication bodies: null",
+          "status": "passed",
+          "title": "rejects invalid authentication bodies: null",
+          "duration": 4.1260409999999865,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [
+            "authentication and authorization"
+          ],
+          "fullName": "authentication and authorization rejects invalid authentication bodies: undefined",
+          "status": "passed",
+          "title": "rejects invalid authentication bodies: undefined",
+          "duration": 2.4111669999999776,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [
+            "authentication and authorization"
+          ],
+          "fullName": "authentication and authorization rejects invalid authentication bodies: {}",
+          "status": "passed",
+          "title": "rejects invalid authentication bodies: {}",
+          "duration": 2.495625000000018,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [
+            "authentication and authorization"
+          ],
+          "fullName": "authentication and authorization rejects invalid authentication bodies: {\"email\":\"bad\",\"password\":\"[REDACTED: credential]\"}",
+          "status": "passed",
+          "title": "rejects invalid authentication bodies: {\"email\":\"bad\",\"password\":\"[REDACTED: credential]\"}",
+          "duration": 2.236167000000023,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [
+            "authentication and authorization"
+          ],
+          "fullName": "authentication and authorization rejects invalid authentication bodies: {\"email\":\"[REDACTED: email]\",\"password\":123}",
+          "status": "passed",
+          "title": "rejects invalid authentication bodies: {\"email\":\"[REDACTED: email]\",\"password\":123}",
+          "duration": 2.2840830000000096,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [
+            "authentication and authorization"
+          ],
+          "fullName": "authentication and authorization logs in with an existing bcrypt password over 72 bytes (0)",
+          "status": "passed",
+          "title": "logs in with an existing bcrypt password over 72 bytes (0)",
+          "duration": 220.17766700000016,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [
+            "authentication and authorization"
+          ],
+          "fullName": "authentication and authorization logs in with an existing bcrypt password over 72 bytes (1)",
+          "status": "passed",
+          "title": "logs in with an existing bcrypt password over 72 bytes (1)",
+          "duration": 218.16158300000006,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [
+            "authentication and authorization"
+          ],
+          "fullName": "authentication and authorization rejects login bodies beyond the JSON budget without evaluating bcrypt",
+          "status": "passed",
+          "title": "rejects login bodies beyond the JSON budget without evaluating bcrypt",
+          "duration": 2.7282920000000104,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [
+            "authentication and authorization"
+          ],
+          "fullName": "authentication and authorization rejects concurrent duplicate registration with a controlled conflict",
+          "status": "passed",
+          "title": "rejects concurrent duplicate registration with a controlled conflict",
+          "duration": 156.40654199999994,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [
+            "authentication and authorization"
+          ],
+          "fullName": "authentication and authorization rejects missing, malformed, expired, forged, and wrong-algorithm tokens",
+          "status": "passed",
+          "title": "rejects missing, malformed, expired, forged, and wrong-algorithm tokens",
+          "duration": 13.211874999999964,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [
+            "authentication and authorization"
+          ],
+          "fullName": "authentication and authorization authorizes using the current database role rather than a signed stale role",
+          "status": "passed",
+          "title": "authorizes using the current database role rather than a signed stale role",
+          "duration": 8.138583000000153,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [
+            "authentication and authorization"
+          ],
+          "fullName": "authentication and authorization rejects an otherwise valid token for a nonexistent identity",
+          "status": "passed",
+          "title": "rejects an otherwise valid token for a nonexistent identity",
+          "duration": 2.1987920000001395,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [
+            "authentication and authorization"
+          ],
+          "fullName": "authentication and authorization throttles auth attempts and ignores spoofed forwarded addresses",
+          "status": "passed",
+          "title": "throttles auth attempts and ignores spoofed forwarded addresses",
+          "duration": 26.94145800000001,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [
+            "events and safe error responses"
+          ],
+          "fullName": "events and safe error responses creates an entire seat grid as an organizer",
+          "status": "passed",
+          "title": "creates an entire seat grid as an organizer",
+          "duration": 12.27016599999979,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [
+            "events and safe error responses"
+          ],
+          "fullName": "events and safe error responses returns controlled errors for invalid event input and IDs",
+          "status": "passed",
+          "title": "returns controlled errors for invalid event input and IDs",
+          "duration": 12.048707999999806,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [
+            "events and safe error responses"
+          ],
+          "fullName": "events and safe error responses rejects invalid JSON and oversized bodies consistently",
+          "status": "passed",
+          "title": "rejects invalid JSON and oversized bodies consistently",
+          "duration": 2.166874999999891,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [
+            "events and safe error responses"
+          ],
+          "fullName": "events and safe error responses forwards asynchronous failures without exposing internals or returning empty success",
+          "status": "passed",
+          "title": "forwards asynchronous failures without exposing internals or returning empty success",
+          "duration": 3.4227920000002996,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [
+            "events and safe error responses"
+          ],
+          "fullName": "events and safe error responses restricts browser CORS and disables API response caching",
+          "status": "passed",
+          "title": "restricts browser CORS and disables API response caching",
+          "duration": 1.2773749999996653,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [
+            "booking integrity and ownership"
+          ],
+          "fullName": "booking integrity and ownership allows owner cancellation after event start while keeping the event closed",
+          "status": "passed",
+          "title": "allows owner cancellation after event start while keeping the event closed",
+          "duration": 21.196124999999938,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [
+            "booking integrity and ownership"
+          ],
+          "fullName": "booking integrity and ownership books, scopes history, rejects foreign cancellation, cancels idempotently, and rebooks",
+          "status": "passed",
+          "title": "books, scopes history, rejects foreign cancellation, cancels idempotently, and rebooks",
+          "duration": 47.90650000000005,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [
+            "booking integrity and ownership"
+          ],
+          "fullName": "booking integrity and ownership rejects invalid IDs, missing seats/bookings, and booking started events",
+          "status": "passed",
+          "title": "rejects invalid IDs, missing seats/bookings, and booking started events",
+          "duration": 20.68291700000009,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [
+            "booking integrity and ownership"
+          ],
+          "fullName": "booking integrity and ownership allows exactly one winner among twelve simultaneous booking requests",
+          "status": "passed",
+          "title": "allows exactly one winner among twelve simultaneous booking requests",
+          "duration": 70.80937499999982,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [
+            "booking integrity and ownership"
+          ],
+          "fullName": "booking integrity and ownership enforces confirmed-seat uniqueness even for independent clients bypassing the service",
+          "status": "passed",
+          "title": "enforces confirmed-seat uniqueness even for independent clients bypassing the service",
+          "duration": 42.93558299999995,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [
+            "booking integrity and ownership"
+          ],
+          "fullName": "booking integrity and ownership serializes cancellation and rebooking without touching the replacement booking",
+          "status": "passed",
+          "title": "serializes cancellation and rebooking without touching the replacement booking",
+          "duration": 21.88695800000005,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [
+            "booking integrity and ownership"
+          ],
+          "fullName": "booking integrity and ownership rolls back failed transactions and releases locks for the next booking",
+          "status": "passed",
+          "title": "rolls back failed transactions and releases locks for the next booking",
+          "duration": 15.059167000000343,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [
+            "booking integrity and ownership"
+          ],
+          "fullName": "booking integrity and ownership rejects invalid event data and noncanonical emails at the database boundary",
+          "status": "passed",
+          "title": "rejects invalid event data and noncanonical emails at the database boundary",
+          "duration": 5.452374999999847,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        }
+      ],
+      "startTime": 1792774709061,
+      "endTime": 1792774710713.4524,
+      "status": "passed",
+      "message": "",
+      "name": "/app/test/api.integration.test.ts"
+    },
+    {
+      "assertionResults": [
+        {
+          "ancestorTitles": [
+            "hold creation, authorization and availability"
+          ],
+          "fullName": "hold creation, authorization and availability persists an exact ten-minute database deadline and ignores supplied ownership/time",
+          "status": "passed",
+          "title": "persists an exact ten-minute database deadline and ignores supplied ownership/time",
+          "duration": 233.24233399999991,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [
+            "hold creation, authorization and availability"
+          ],
+          "fullName": "hold creation, authorization and availability lists only the current attendee’s active holds with original deadlines",
+          "status": "passed",
+          "title": "lists only the current attendee’s active holds with original deadlines",
+          "duration": 32.54283299999997,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [
+            "hold creation, authorization and availability"
+          ],
+          "fullName": "hold creation, authorization and availability requires attendee authentication on every hold endpoint",
+          "status": "passed",
+          "title": "requires attendee authentication on every hold endpoint",
+          "duration": 19.54166699999996,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [
+            "hold creation, authorization and availability"
+          ],
+          "fullName": "hold creation, authorization and availability hides foreign hold identifiers and rejects owner spoofing",
+          "status": "passed",
+          "title": "hides foreign hold identifiers and rejects owner spoofing",
+          "duration": 14.35895800000003,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [
+            "hold creation, authorization and availability"
+          ],
+          "fullName": "hold creation, authorization and availability rejects malformed bodies, IDs and missing resources",
+          "status": "passed",
+          "title": "rejects malformed bodies, IDs and missing resources",
+          "duration": 21.162624999999935,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [
+            "hold creation, authorization and availability"
+          ],
+          "fullName": "hold creation, authorization and availability rejects holds on confirmed bookings and does not treat direct bookings as holds",
+          "status": "passed",
+          "title": "rejects holds on confirmed bookings and does not treat direct bookings as holds",
+          "duration": 23.573708000000124,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [
+            "hold creation, authorization and availability"
+          ],
+          "fullName": "hold creation, authorization and availability rejects new holds and confirmation after event start, while allowing release",
+          "status": "passed",
+          "title": "rejects new holds and confirmation after event start, while allowing release",
+          "duration": 37.715167000000065,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [
+            "hold creation, authorization and availability"
+          ],
+          "fullName": "hold creation, authorization and availability uses database time despite application clock skew",
+          "status": "passed",
+          "title": "uses database time despite application clock skew",
+          "duration": 6.314624999999978,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [
+            "expiration, confirmation, release and retry behavior"
+          ],
+          "fullName": "expiration, confirmation, release and retry behavior confirms once, retries the same booking, then preserves cancellation and reacquisition",
+          "status": "passed",
+          "title": "confirms once, retries the same booking, then preserves cancellation and reacquisition",
+          "duration": 56.32208300000002,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [
+            "expiration, confirmation, release and retry behavior"
+          ],
+          "fullName": "expiration, confirmation, release and retry behavior returns the original hold on retry without extending its expiration",
+          "status": "passed",
+          "title": "returns the original hold on retry without extending its expiration",
+          "duration": 16.589124999999967,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [
+            "expiration, confirmation, release and retry behavior"
+          ],
+          "fullName": "expiration, confirmation, release and retry behavior releases idempotently, reacquires and ignores stale release retries",
+          "status": "passed",
+          "title": "releases idempotently, reacquires and ignores stale release retries",
+          "duration": 30.599707999999964,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [
+            "expiration, confirmation, release and retry behavior"
+          ],
+          "fullName": "expiration, confirmation, release and retry behavior makes expired seats available without cleanup and rejects expired confirmation/release",
+          "status": "passed",
+          "title": "makes expired seats available without cleanup and rejects expired confirmation/release",
+          "duration": 29.758208000000195,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [
+            "expiration, confirmation, release and retry behavior"
+          ],
+          "fullName": "expiration, confirmation, release and retry behavior reconciles an expired hold for same owner without deleting history",
+          "status": "passed",
+          "title": "reconciles an expired hold for same owner without deleting history",
+          "duration": 19.394416999999976,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [
+            "expiration, confirmation, release and retry behavior"
+          ],
+          "fullName": "expiration, confirmation, release and retry behavior reconciles an expired hold for different owner without deleting history",
+          "status": "passed",
+          "title": "reconciles an expired hold for different owner without deleting history",
+          "duration": 15.21508400000016,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [
+            "expiration, confirmation, release and retry behavior"
+          ],
+          "fullName": "expiration, confirmation, release and retry behavior reconciles an expired hold for immediate booking without deleting history",
+          "status": "passed",
+          "title": "reconciles an expired hold for immediate booking without deleting history",
+          "duration": 24.21120800000017,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [
+            "expiration, confirmation, release and retry behavior"
+          ],
+          "fullName": "expiration, confirmation, release and retry behavior survives two actual API processes and recovers the original deadline after restart",
+          "status": "passed",
+          "title": "survives two actual API processes and recovers the original deadline after restart",
+          "duration": 975.6658340000001,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [
+            "database constraints, concurrency and failure recovery"
+          ],
+          "fullName": "database constraints, concurrency and failure recovery returns a safe retryable error on seat lock timeout without acquiring a hold",
+          "status": "passed",
+          "title": "returns a safe retryable error on seat lock timeout without acquiring a hold",
+          "duration": 3070.1649180000004,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [
+            "database constraints, concurrency and failure recovery"
+          ],
+          "fullName": "database constraints, concurrency and failure recovery allows one winner among twelve competing attendees (expired predecessor: false)",
+          "status": "passed",
+          "title": "allows one winner among twelve competing attendees (expired predecessor: false)",
+          "duration": 104.98904200000015,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [
+            "database constraints, concurrency and failure recovery"
+          ],
+          "fullName": "database constraints, concurrency and failure recovery allows one winner among twelve competing attendees (expired predecessor: true)",
+          "status": "passed",
+          "title": "allows one winner among twelve competing attendees (expired predecessor: true)",
+          "duration": 61.87212600000021,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [
+            "database constraints, concurrency and failure recovery"
+          ],
+          "fullName": "database constraints, concurrency and failure recovery serializes concurrent same-owner retries without extending or duplicating a hold",
+          "status": "passed",
+          "title": "serializes concurrent same-owner retries without extending or duplicating a hold",
+          "duration": 24.41295899999932,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [
+            "database constraints, concurrency and failure recovery"
+          ],
+          "fullName": "database constraints, concurrency and failure recovery serializes twelve confirmations into one permanent booking",
+          "status": "passed",
+          "title": "serializes twelve confirmations into one permanent booking",
+          "duration": 36.91933400000016,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [
+            "database constraints, concurrency and failure recovery"
+          ],
+          "fullName": "database constraints, concurrency and failure recovery prevents a simultaneous hold and immediate booking from both succeeding",
+          "status": "passed",
+          "title": "prevents a simultaneous hold and immediate booking from both succeeding",
+          "duration": 9.993875000000116,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [
+            "database constraints, concurrency and failure recovery"
+          ],
+          "fullName": "database constraints, concurrency and failure recovery blocks immediate booking by either attendee during an active hold",
+          "status": "passed",
+          "title": "blocks immediate booking by either attendee during an active hold",
+          "duration": 16.25566600000002,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [
+            "database constraints, concurrency and failure recovery"
+          ],
+          "fullName": "database constraints, concurrency and failure recovery serializes confirmation versus release into a single terminal outcome",
+          "status": "passed",
+          "title": "serializes confirmation versus release into a single terminal outcome",
+          "duration": 14.63995800000066,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [
+            "database constraints, concurrency and failure recovery"
+          ],
+          "fullName": "database constraints, concurrency and failure recovery accepts concurrent release retries while leaving a replacement hold intact",
+          "status": "passed",
+          "title": "accepts concurrent release retries while leaving a replacement hold intact",
+          "duration": 41.70204199999989,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [
+            "database constraints, concurrency and failure recovery"
+          ],
+          "fullName": "database constraints, concurrency and failure recovery serializes expired confirmation versus reacquisition without affecting the new owner",
+          "status": "passed",
+          "title": "serializes expired confirmation versus reacquisition without affecting the new owner",
+          "duration": 22.388167000000067,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [
+            "database constraints, concurrency and failure recovery"
+          ],
+          "fullName": "database constraints, concurrency and failure recovery samples expiration after waiting for the seat lock",
+          "status": "passed",
+          "title": "samples expiration after waiting for the seat lock",
+          "duration": 22.918749999999818,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [
+            "database constraints, concurrency and failure recovery"
+          ],
+          "fullName": "database constraints, concurrency and failure recovery enforces hold-versus-booking uniqueness for independent clients bypassing locks",
+          "status": "passed",
+          "title": "enforces hold-versus-booking uniqueness for independent clients bypassing locks",
+          "duration": 39.5252500000006,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [
+            "database constraints, concurrency and failure recovery"
+          ],
+          "fullName": "database constraints, concurrency and failure recovery rejects missing or non-ten-minute hold deadlines at the database boundary",
+          "status": "passed",
+          "title": "rejects missing or non-ten-minute hold deadlines at the database boundary",
+          "duration": 6.282959000000119,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [
+            "database constraints, concurrency and failure recovery"
+          ],
+          "fullName": "database constraints, concurrency and failure recovery rolls back expiration reconciliation if replacement insertion fails",
+          "status": "passed",
+          "title": "rolls back expiration reconciliation if replacement insertion fails",
+          "duration": 18.286541000000398,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [
+            "database constraints, concurrency and failure recovery"
+          ],
+          "fullName": "database constraints, concurrency and failure recovery rolls back a real database confirmation failure and permits a safe retry",
+          "status": "passed",
+          "title": "rolls back a real database confirmation failure and permits a safe retry",
+          "duration": 17.635917000000518,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [
+            "database constraints, concurrency and failure recovery"
+          ],
+          "fullName": "database constraints, concurrency and failure recovery maps raw SQL constraint 23505 to a safe HTTP conflict",
+          "status": "passed",
+          "title": "maps raw SQL constraint 23505 to a safe HTTP conflict",
+          "duration": 4.115334000000075,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [
+            "database constraints, concurrency and failure recovery"
+          ],
+          "fullName": "database constraints, concurrency and failure recovery maps raw SQL constraint 23503 to a safe HTTP conflict",
+          "status": "passed",
+          "title": "maps raw SQL constraint 23503 to a safe HTTP conflict",
+          "duration": 3.646292000000358,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        }
+      ],
+      "startTime": 1792774703310,
+      "endTime": 1792774708382.6462,
+      "status": "passed",
+      "message": "",
+      "name": "/app/test/holds.integration.test.ts"
+    },
+    {
+      "assertionResults": [
+        {
+          "ancestorTitles": [
+            "populated database migration through Prisma CLI"
+          ],
+          "fullName": "populated database migration through Prisma CLI upgrades a populated Phase 1 database without changing bookings or prior migration records",
+          "status": "passed",
+          "title": "upgrades a populated Phase 1 database without changing bookings or prior migration records",
+          "duration": 1595.4754589999998,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [
+            "populated database migration through Prisma CLI"
+          ],
+          "fullName": "populated database migration through Prisma CLI preserves all bookings, identities, hashes, dates and relationships; redeploys idempotently",
+          "status": "passed",
+          "title": "preserves all bookings, identities, hashes, dates and relationships; redeploys idempotently",
+          "duration": 1176.599209,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [
+            "populated database migration through Prisma CLI"
+          ],
+          "fullName": "populated database migration through Prisma CLI reports duplicate booking, rolls back every change, blocks retries and recovers without deleting rows",
+          "status": "passed",
+          "title": "reports duplicate booking, rolls back every change, blocks retries and recovers without deleting rows",
+          "duration": 1891.2872929999999,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [
+            "populated database migration through Prisma CLI"
+          ],
+          "fullName": "populated database migration through Prisma CLI reports email collision, rolls back every change, blocks retries and recovers without deleting rows",
+          "status": "passed",
+          "title": "reports email collision, rolls back every change, blocks retries and recovers without deleting rows",
+          "duration": 1939.9218760000003,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [
+            "populated database migration through Prisma CLI"
+          ],
+          "fullName": "populated database migration through Prisma CLI reports invalid grid, rolls back every change, blocks retries and recovers without deleting rows",
+          "status": "passed",
+          "title": "reports invalid grid, rolls back every change, blocks retries and recovers without deleting rows",
+          "duration": 1905.9091680000001,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [
+            "populated database migration through Prisma CLI"
+          ],
+          "fullName": "populated database migration through Prisma CLI reports negative price, rolls back every change, blocks retries and recovers without deleting rows",
+          "status": "passed",
+          "title": "reports negative price, rolls back every change, blocks retries and recovers without deleting rows",
+          "duration": 1892.794917000001,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [
+            "populated database migration through Prisma CLI"
+          ],
+          "fullName": "populated database migration through Prisma CLI reports invalid seat, rolls back every change, blocks retries and recovers without deleting rows",
+          "status": "passed",
+          "title": "reports invalid seat, rolls back every change, blocks retries and recovers without deleting rows",
+          "duration": 1896.9631260000006,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [
+            "populated database migration through Prisma CLI"
+          ],
+          "fullName": "populated database migration through Prisma CLI reports invalid cancellation, rolls back every change, blocks retries and recovers without deleting rows",
+          "status": "passed",
+          "title": "reports invalid cancellation, rolls back every change, blocks retries and recovers without deleting rows",
+          "duration": 1886.4988759999997,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        }
+      ],
+      "startTime": 1792774711188,
+      "endTime": 1792774725374.4988,
+      "status": "passed",
+      "message": "",
+      "name": "/app/test/migration.integration.test.ts"
+    },
+    {
+      "assertionResults": [
+        {
+          "ancestorTitles": [
+            "atomic, non-destructive demo initialization on isolated PostgreSQL"
+          ],
+          "fullName": "atomic, non-destructive demo initialization on isolated PostgreSQL creates every demo account, event, seat grid and booking through the real CLI",
+          "status": "passed",
+          "title": "creates every demo account, event, seat grid and booking through the real CLI",
+          "duration": 948.295917,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [
+            "atomic, non-destructive demo initialization on isolated PostgreSQL"
+          ],
+          "fullName": "atomic, non-destructive demo initialization on isolated PostgreSQL repeats without changing IDs, hashes, timestamps, dates or reservations",
+          "status": "passed",
+          "title": "repeats without changing IDs, hashes, timestamps, dates or reservations",
+          "duration": 585.7927499999998,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [
+            "atomic, non-destructive demo initialization on isolated PostgreSQL"
+          ],
+          "fullName": "atomic, non-destructive demo initialization on isolated PostgreSQL preserves customer edits, cancelled bookings and active holds on subsequent runs",
+          "status": "passed",
+          "title": "preserves customer edits, cancelled bookings and active holds on subsequent runs",
+          "duration": 689.0547919999999,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [
+            "atomic, non-destructive demo initialization on isolated PostgreSQL"
+          ],
+          "fullName": "atomic, non-destructive demo initialization on isolated PostgreSQL does not overwrite an existing account that happens to use a demo email",
+          "status": "passed",
+          "title": "does not overwrite an existing account that happens to use a demo email",
+          "duration": 507.5379170000001,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [
+            "atomic, non-destructive demo initialization on isolated PostgreSQL"
+          ],
+          "fullName": "atomic, non-destructive demo initialization on isolated PostgreSQL preserves legacy partial data and explicitly declines to claim demo completeness",
+          "status": "passed",
+          "title": "preserves legacy partial data and explicitly declines to claim demo completeness",
+          "duration": 733.934542,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [
+            "atomic, non-destructive demo initialization on isolated PostgreSQL"
+          ],
+          "fullName": "atomic, non-destructive demo initialization on isolated PostgreSQL rolls back a late database failure and permits a complete retry",
+          "status": "passed",
+          "title": "rolls back a late database failure and permits a complete retry",
+          "duration": 1182.4501679999998,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [
+            "atomic, non-destructive demo initialization on isolated PostgreSQL"
+          ],
+          "fullName": "atomic, non-destructive demo initialization on isolated PostgreSQL serializes independent concurrent initializers into one complete dataset",
+          "status": "passed",
+          "title": "serializes independent concurrent initializers into one complete dataset",
+          "duration": 806.4746670000004,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        },
+        {
+          "ancestorTitles": [
+            "atomic, non-destructive demo initialization on isolated PostgreSQL"
+          ],
+          "fullName": "atomic, non-destructive demo initialization on isolated PostgreSQL rolls back an interrupted database session and recovers through the real CLI",
+          "status": "passed",
+          "title": "rolls back an interrupted database session and recovers through the real CLI",
+          "duration": 1056.8511250000001,
+          "failureMessages": [],
+          "meta": {},
+          "tags": [],
+          "benchmarks": []
+        }
+      ],
+      "startTime": 1792774725880,
+      "endTime": 1792774732390.851,
+      "status": "passed",
+      "message": "",
+      "name": "/app/test/seed.integration.test.ts"
+    }
+  ]
+}

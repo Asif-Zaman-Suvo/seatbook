@@ -1,0 +1,577 @@
+{
+  "results": [
+    {
+      "name": "Expected demo accounts remain present in isolated full stack",
+      "passed": true
+    },
+    {
+      "name": "Organizer UI signup, logout and login",
+      "passed": true
+    },
+    {
+      "name": "Organizer UI creates event, complete 2×6 grid and 1995-cent price",
+      "passed": true,
+      "eventId": 5
+    },
+    {
+      "name": "Attendee UI signup, logout and login",
+      "passed": true
+    },
+    {
+      "name": "Attendee discovers/selects seat and acquires exclusive exact ten-minute hold",
+      "passed": true,
+      "timer1": "10:00",
+      "timer2": "9:59"
+    },
+    {
+      "name": "Repeated hold creation preserves original persisted deadline",
+      "passed": true
+    },
+    {
+      "name": "Second attendee sees unavailable seat; hold, direct booking and foreign actions are rejected without owner disclosure",
+      "passed": true
+    },
+    {
+      "name": "Navigation and page refresh recover original hold deadline",
+      "passed": true
+    },
+    {
+      "name": "UI confirmation, idempotent confirmation, booking history and cancellation persist correctly",
+      "passed": true
+    },
+    {
+      "name": "UI release immediately permits another attendee to reacquire",
+      "passed": true
+    },
+    {
+      "name": "Real database-time expiry updates UI, rejects confirmation and permits immediate reacquisition",
+      "passed": true
+    },
+    {
+      "name": "Concurrent browser requests have one hold winner and one persisted confirmed booking",
+      "passed": true
+    },
+    {
+      "name": "375px hold layout fits viewport; browser wall-clock jump does not extend countdown",
+      "passed": true,
+      "beforeClock": "10:00",
+      "afterClock": "10:00"
+    },
+    {
+      "name": "API restart preserves signing secret, authenticated hold, dates, credentials and bookings",
+      "passed": true
+    },
+    {
+      "name": "Full browser close/reopen recovers authenticated hold with unchanged deadline",
+      "passed": true
+    },
+    {
+      "name": "Actual PostgreSQL outage makes readiness 503 and recovery returns 200 with persisted hold",
+      "passed": true
+    },
+    {
+      "name": "No browser JavaScript exceptions",
+      "passed": true,
+      "count": 0
+    }
+  ],
+  "errors": [],
+  "requests": [
+    {
+      "path": "/auth/register",
+      "status": 204
+    },
+    {
+      "path": "/auth/register",
+      "status": 201
+    },
+    {
+      "path": "/events",
+      "status": 200
+    },
+    {
+      "path": "/auth/login",
+      "status": 204
+    },
+    {
+      "path": "/auth/login",
+      "status": 200
+    },
+    {
+      "path": "/events",
+      "status": 200
+    },
+    {
+      "path": "/events",
+      "status": 204
+    },
+    {
+      "path": "/events",
+      "status": 201
+    },
+    {
+      "path": "/events/5",
+      "status": 200
+    },
+    {
+      "path": "/events/5",
+      "status": 204
+    },
+    {
+      "path": "/events/5",
+      "status": 200
+    },
+    {
+      "path": "/auth/register",
+      "status": 201
+    },
+    {
+      "path": "/events",
+      "status": 200
+    },
+    {
+      "path": "/holds/mine",
+      "status": 204
+    },
+    {
+      "path": "/auth/login",
+      "status": 200
+    },
+    {
+      "path": "/holds/mine",
+      "status": 200
+    },
+    {
+      "path": "/events",
+      "status": 200
+    },
+    {
+      "path": "/events/5",
+      "status": 200
+    },
+    {
+      "path": "/holds/mine",
+      "status": 200
+    },
+    {
+      "path": "/holds",
+      "status": 204
+    },
+    {
+      "path": "/holds",
+      "status": 201
+    },
+    {
+      "path": "/events/5",
+      "status": 200
+    },
+    {
+      "path": "/holds/mine",
+      "status": 200
+    },
+    {
+      "path": "/events/5",
+      "status": 200
+    },
+    {
+      "path": "/holds/mine",
+      "status": 204
+    },
+    {
+      "path": "/holds/mine",
+      "status": 200
+    },
+    {
+      "path": "/holds",
+      "status": 200
+    },
+    {
+      "path": "/auth/register",
+      "status": 204
+    },
+    {
+      "path": "/auth/register",
+      "status": 201
+    },
+    {
+      "path": "/holds/mine",
+      "status": 204
+    },
+    {
+      "path": "/events",
+      "status": 200
+    },
+    {
+      "path": "/holds/mine",
+      "status": 200
+    },
+    {
+      "path": "/holds/mine",
+      "status": 200
+    },
+    {
+      "path": "/events/5",
+      "status": 200
+    },
+    {
+      "path": "/holds",
+      "status": 204
+    },
+    {
+      "path": "/holds",
+      "status": 409
+    },
+    {
+      "path": "/bookings",
+      "status": 204
+    },
+    {
+      "path": "/bookings",
+      "status": 409
+    },
+    {
+      "path": "/holds/5/confirm",
+      "status": 204
+    },
+    {
+      "path": "/holds/5/confirm",
+      "status": 404
+    },
+    {
+      "path": "/holds/5/release",
+      "status": 204
+    },
+    {
+      "path": "/holds/5/release",
+      "status": 404
+    },
+    {
+      "path": "/events/5",
+      "status": 204
+    },
+    {
+      "path": "/events/5",
+      "status": 200
+    },
+    {
+      "path": "/bookings/mine",
+      "status": 204
+    },
+    {
+      "path": "/bookings/mine",
+      "status": 200
+    },
+    {
+      "path": "/holds/mine",
+      "status": 200
+    },
+    {
+      "path": "/bookings/mine",
+      "status": 200
+    },
+    {
+      "path": "/holds/mine",
+      "status": 200
+    },
+    {
+      "path": "/bookings/mine",
+      "status": 200
+    },
+    {
+      "path": "/holds/mine",
+      "status": 200
+    },
+    {
+      "path": "/bookings/mine",
+      "status": 200
+    },
+    {
+      "path": "/holds/5/confirm",
+      "status": 204
+    },
+    {
+      "path": "/holds/5/confirm",
+      "status": 200
+    },
+    {
+      "path": "/bookings/mine",
+      "status": 200
+    },
+    {
+      "path": "/holds/mine",
+      "status": 200
+    },
+    {
+      "path": "/bookings/mine",
+      "status": 200
+    },
+    {
+      "path": "/holds/5/confirm",
+      "status": 204
+    },
+    {
+      "path": "/holds/5/confirm",
+      "status": 200
+    },
+    {
+      "path": "/bookings/5/cancel",
+      "status": 204
+    },
+    {
+      "path": "/bookings/5/cancel",
+      "status": 200
+    },
+    {
+      "path": "/bookings/mine",
+      "status": 200
+    },
+    {
+      "path": "/events/5",
+      "status": 200
+    },
+    {
+      "path": "/events/5",
+      "status": 200
+    },
+    {
+      "path": "/holds/mine",
+      "status": 200
+    },
+    {
+      "path": "/holds",
+      "status": 201
+    },
+    {
+      "path": "/events/5",
+      "status": 200
+    },
+    {
+      "path": "/holds/mine",
+      "status": 200
+    },
+    {
+      "path": "/events/5",
+      "status": 200
+    },
+    {
+      "path": "/holds/mine",
+      "status": 200
+    },
+    {
+      "path": "/holds/6/release",
+      "status": 204
+    },
+    {
+      "path": "/holds/6/release",
+      "status": 200
+    },
+    {
+      "path": "/events/5",
+      "status": 200
+    },
+    {
+      "path": "/holds/mine",
+      "status": 200
+    },
+    {
+      "path": "/events/5",
+      "status": 200
+    },
+    {
+      "path": "/holds",
+      "status": 201
+    },
+    {
+      "path": "/holds/7/release",
+      "status": 204
+    },
+    {
+      "path": "/holds/7/release",
+      "status": 200
+    },
+    {
+      "path": "/events/5",
+      "status": 200
+    },
+    {
+      "path": "/holds/mine",
+      "status": 200
+    },
+    {
+      "path": "/holds",
+      "status": 201
+    },
+    {
+      "path": "/events/5",
+      "status": 200
+    },
+    {
+      "path": "/holds/mine",
+      "status": 200
+    },
+    {
+      "path": "/events/5",
+      "status": 200
+    },
+    {
+      "path": "/holds/mine",
+      "status": 200
+    },
+    {
+      "path": "/holds/mine",
+      "status": 200
+    },
+    {
+      "path": "/events/5",
+      "status": 200
+    },
+    {
+      "path": "/holds/mine",
+      "status": 204
+    },
+    {
+      "path": "/holds/mine",
+      "status": 200
+    },
+    {
+      "path": "/events/5",
+      "status": 200
+    },
+    {
+      "path": "/holds/8/confirm",
+      "status": 204
+    },
+    {
+      "path": "/holds/8/confirm",
+      "status": 409
+    },
+    {
+      "path": "/holds",
+      "status": 204
+    },
+    {
+      "path": "/events/5",
+      "status": 200
+    },
+    {
+      "path": "/holds",
+      "status": 201
+    },
+    {
+      "path": "/holds/9/release",
+      "status": 204
+    },
+    {
+      "path": "/holds/9/release",
+      "status": 200
+    },
+    {
+      "path": "/events/5",
+      "status": 204
+    },
+    {
+      "path": "/events/5",
+      "status": 200
+    },
+    {
+      "path": "/holds",
+      "status": 204
+    },
+    {
+      "path": "/holds",
+      "status": 201
+    },
+    {
+      "path": "/holds",
+      "status": 409
+    },
+    {
+      "path": "/holds/10/confirm",
+      "status": 204
+    },
+    {
+      "path": "/holds/10/confirm",
+      "status": 204
+    },
+    {
+      "path": "/holds/10/confirm",
+      "status": 200
+    },
+    {
+      "path": "/holds/10/confirm",
+      "status": 200
+    },
+    {
+      "path": "/events/5",
+      "status": 200
+    },
+    {
+      "path": "/holds/mine",
+      "status": 200
+    },
+    {
+      "path": "/holds",
+      "status": 201
+    },
+    {
+      "path": "/events/5",
+      "status": 200
+    },
+    {
+      "path": "/holds/mine",
+      "status": 200
+    },
+    {
+      "path": "/events/5",
+      "status": 200
+    },
+    {
+      "path": "/holds/mine",
+      "status": 204
+    },
+    {
+      "path": "/holds/mine",
+      "status": 200
+    },
+    {
+      "path": "/holds/mine",
+      "status": 204
+    },
+    {
+      "path": "/holds/mine",
+      "status": 200
+    },
+    {
+      "path": "/holds/mine",
+      "status": 200
+    },
+    {
+      "path": "/holds/mine",
+      "status": 204
+    },
+    {
+      "path": "/events",
+      "status": 200
+    },
+    {
+      "path": "/holds/mine",
+      "status": 200
+    },
+    {
+      "path": "/events",
+      "status": 200
+    },
+    {
+      "path": "/holds/mine",
+      "status": 204
+    },
+    {
+      "path": "/holds/mine",
+      "status": 200
+    },
+    {
+      "path": "/holds/mine",
+      "status": 200
+    }
+  ]
+}

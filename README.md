@@ -208,7 +208,7 @@ AI initially paired Vitest 5 with the existing Vite 5 frontend without checking 
 ## Remaining assignment submission work
 
 - Complete the exact standard-command fresh-start check on a separate safe environment without touching the existing application database.
-- Export genuine AI development conversations/screenshots into `ai-transcripts/`; packaging has not started, and phase summaries are not substitutes for those records.
+- Review and commit the filtered/redacted [AI development evidence](ai-transcripts/README.md) before submission.
 - Review the final handover, retain incremental Git history without squashing, and submit the repository link through the supplied form. Ensure the submitted repository is public or private with `adar2378` added. The deadline is 30 October 2026, end of day Bangladesh time.
 
 ## Detailed implementation notes
