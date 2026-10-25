@@ -194,6 +194,8 @@ Hold creation accepts `{ "seatId": 12 }`, returning 201 for a new hold or 200 fo
 
 These are launch considerations, separate from the remaining assignment submission work:
 
+- Before accepting real payments, integrate a payment provider with verified, idempotent callbacks and define payment deadlines relative to the ten-minute hold. A late payment must not confirm an expired or reassigned seat; define an explicit void/refund policy.
+- Plan email verification to establish address ownership and secure password recovery for lost credentials, using expiring, single-use tokens and abuse limits. Neither flow is implemented; both remain outside this assignment's scope.
 - Supply a strong production `JWT_SECRET`, remove public demo credentials, and review HTTPS, XSS protection, and the current seven-day localStorage bearer-token policy.
 - Review public organizer access and hold-abuse limits. If using multiple API instances, replace process-local authentication throttling with shared enforcement or an appropriate edge policy.
 - Reassess the [documented dependency advisories and reachability](docs/phase-1.md#dependency-review-retained-from-the-follow-up-audit), applying reviewed compatible fixes. No current clean-audit claim is made.
@@ -211,7 +213,6 @@ AI initially paired Vitest 5 with the existing Vite 5 frontend without checking 
 
 - [x] Complete the exact standard-command fresh-start verification without touching the existing application database.
 - [x] Package, review, and commit the filtered/redacted [AI development evidence](ai-transcripts/README.md), included in commit `83ce324`.
-- [ ] Review, approve, commit, and publish this final documentation update, preserving incremental Git history without squashing.
 - [ ] Submit the repository link through the supplied form by 30 October 2026, end of day Bangladesh time; form completion has not been verified.
 
 The [GitHub repository](https://github.com/Asif-Zaman-Suvo/seatbook) was verified publicly accessible on 25 October 2026, with remote `main` matching local commit `83ce324`. Public access satisfies the assignment's repository-access requirement.
