@@ -108,7 +108,7 @@ These reports were produced during Phase 5, not regenerated during packaging. Nu
 
 **212 automated tests** and **17 separate browser checks** are represented. Frontend unit tests use mocked APIs; Phase 5 browser checks use the actual frontend, API, and PostgreSQL. Expiry checks use isolated timestamp fixtures, not a natural ten-minute sleep. The reports are supporting snapshots, not a portable committed browser harness or measured coverage percentage.
 
-Successful fresh startup used isolated Compose overrides. Execution of the exact unqualified `docker compose up --build` against a fresh standard environment remains pending; packaging does not perform that verification. See [Phase 5](../docs/phase-5.md).
+**Completion note — 25 October 2026:** later verification successfully executed the literal `docker compose up --build` at commit `83ce324`, using only base Compose, default ports, and an independent temporary checkout with an isolated project identity. Its separate real Chrome run passed 17 checks. That later evidence is privately archived and is not part of this export or the committed historical reports above; the original transcript cutoff, checkpoint mappings, and fingerprints remain unchanged. The 212 automated tests were not rerun during that verification. See the [dated Phase 5 addendum](../docs/phase-5.md#final-verification-and-cleanup-addendum--25-october-2026).
 
 ## Integrity and limits
 

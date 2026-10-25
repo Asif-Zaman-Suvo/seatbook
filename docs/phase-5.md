@@ -192,3 +192,37 @@ Five files, assigned once, with no package, lockfile, generated artifact, secret
 The existing lockfile was preserved as found at Phase 5 entry: SHA-256 `b49d6bb4f3949919f1dc9c8af4ba5e31af88baf6a633d7ee691bd1fac296470f`. Git reported a clean lockfile at that entry (unlike the earlier phase's recorded unstaged state); this phase did not restore, stage, or modify it. Both manifests and both lockfiles retain their Phase 5 entry hashes. The only base Compose changes are readiness healthcheck and client dependency ordering; PostgreSQL host port 5434 is preserved.
 
 Final review checks the entire five-file inventory, error-response privacy, readiness/transaction separation, resolved isolation, startup ordering, no unrelated source/dependency/schema changes, and an empty Git index. Approval is required before any commits or Phase 6 work.
+
+## Final verification and cleanup addendum — 25 October 2026
+
+The sections above preserve the original 23–24 October verification checkpoint, including its then-outstanding handover and exact-command checks. This addendum records their later completion; the original test reports and transcript export are unchanged.
+
+### Exact base Compose startup
+
+An independent temporary checkout at commit `83ce32481a7b623b0359ef67ad120118c18f4e5d` successfully ran the literal command:
+
+```bash
+docker compose up --build
+```
+
+Only the base Compose file was used, with no command-line flags, override files, or port changes. The dedicated shell supplied `COMPOSE_PROJECT_NAME=seatbook-final-exact-20261025`. Its source bind mounts pointed into the temporary checkout, and its new database/configuration volumes and network belonged exclusively to that project. The existing application database and resources were not used.
+
+| Acceptance check | Recorded result |
+|---|---|
+| Standard published ports | PostgreSQL 5434, API 4000, frontend 5173 |
+| Migrations | All four completed, with no rollback markers |
+| Initial seed, before browser mutations | 3 users, 3 events, 79 seats, 4 bookings |
+| Readiness and HTTP | PostgreSQL/API healthy; `/health`, `/ready`, `/events`, and frontend returned 200 |
+| Real Chrome verification | 17 passed, zero failed, zero recorded JavaScript exceptions |
+
+The browser run used the actual frontend, API, and PostgreSQL. It covered seeded-account login, organizer/attendee signup and login, event creation, seat discovery, exclusive holds, ownership/conflict rejection, unchanged deadlines, confirmation/history/cancellation, release/reacquisition, expiry, concurrent requests, 375px layout, navigation/refresh/reopening recovery, and API restart recovery.
+
+This was a separate seventeen-check run, not a replacement for or addition to the count of unique checks in the earlier Phase 5 report. The real PostgreSQL outage scenario was verified in the earlier run and was not repeated here. The previously completed **212 automated tests were not rerun** during the exact-command verification. Build cache was reused, expiry used an isolated timestamp fixture preserving the ten-minute interval, and frontend serving used development Vite. This verifies clean local startup and real application flows, not production deployment or an uncached/offline build.
+
+### Evidence preservation and isolated cleanup
+
+Execution proof, migration/seed results, browser results, startup/service logs, screenshots, and before/after resource inventories were preserved in a private archive outside the repository and temporary checkout. All fifteen selected evidence files passed SHA-256 verification; the archive directory is mode 0700 and its files are mode 0600. Authenticated browser profiles, the credential-bearing harness, and rendered environment configuration were excluded. The private archive is intentionally not published or copied into this repository.
+
+After identity checks and an approved terminal Ctrl+C shutdown, only the three recorded verification containers, their recorded network, and their two newly created volumes were removed. Post-removal inspection confirmed all six targets were absent and all original **22 containers, 11 networks, and 20 volumes** remained preserved. No global prune, image/build-cache removal, application-database reset, or temporary-checkout deletion occurred. Archive hashes remained valid, and cleanup action/inventory/summary records were preserved privately.
+
+The final README handover and authentic transcript packaging/review/commit are complete. Public GitHub access and remote `main` matching commit `83ce324` were verified without authentication. Approval and publication of this documentation update, and submission through the supplied form, remain; form completion has not been verified. The original phase notes above remain historical evidence, not the current submission checklist.

@@ -124,7 +124,9 @@ Both TypeScript checks, the frontend production build, and `git diff --check` pa
 
 **17 separate real Chrome checks passed**, with no JavaScript exceptions, against the actual frontend, API, and PostgreSQL. They cover organizer/attendee flows, exclusivity, confirmation/cancellation, release/expiry, concurrent requests, 375px layout, refresh/reopening, API restart, and database outage/recovery. Readiness returned 503 during the isolated database outage and 200 after recovery. Frontend component tests use mocked APIs; the Phase 5 browser checks did not. Expiry uses isolated timestamp fixtures preserving the ten-minute interval, rather than a natural ten-minute wait.
 
-**Clean-start evidence:** a fresh isolated Compose project created new volumes, applied all four migrations, seeded 3 users / 3 events / 79 seats / 4 bookings, and started the frontend after API readiness. The base configuration also validates. **Actual fresh-environment execution of the exact unqualified `docker compose up --build` remains pending.** The successful isolated run used override files and alternate ports to protect the existing application; it does not prove execution of the base development bind mounts. Browser verification used Vite development serving; the production bundle was built separately. Full evidence and limitations are in [Phase 5](docs/phase-5.md); local browser artifacts are temporary, not a committed portable E2E suite.
+**Exact clean-start verification — 25 October 2026:** commit `83ce32481a7b623b0359ef67ad120118c18f4e5d` successfully ran the literal `docker compose up --build` in an independent temporary checkout. Only base Compose was used, with its development bind mounts and default ports 5434/4000/5173; `COMPOSE_PROJECT_NAME=seatbook-final-exact-20261025` isolated the new resources through the dedicated shell environment. Fresh volumes received all four migrations and the expected 3 users / 3 events / 79 seats / 4 bookings. PostgreSQL and API readiness passed, followed by frontend availability.
+
+A separate real Chrome run against that fresh stack passed **17 checks with zero failures or recorded JavaScript exceptions**. The previously completed **212 automated tests were not rerun** during this verification. This extends the earlier override-based startup evidence; browser serving still used development Vite, and the production bundle was built separately. Only the six new verification resources were subsequently removed, preserving all original Docker resources. The final evidence is privately archived, not published or a portable committed E2E suite. See the [dated Phase 5 addendum](docs/phase-5.md#final-verification-and-cleanup-addendum--25-october-2026) for details and limitations.
 
 ### Reproduce automated tests
 
@@ -205,11 +207,14 @@ The frontend hold coordinator in `client/src/holds.tsx` is the most complex comp
 
 AI initially paired Vitest 5 with the existing Vite 5 frontend without checking peer compatibility. npm rejected the combination. An older compatible runner then exposed critical transitive advisories. Reviewing package metadata and audit results led to Vite 6.4.5 with Vitest 5, followed by Docker installation, tests, TypeScript checks, and the production build. No `--force` bypass was used. This genuine incident is recorded in [Phase 1](docs/phase-1.md#genuine-ai-mistakes-recorded).
 
-## Remaining assignment submission work
+## Assignment submission status
 
-- Complete the exact standard-command fresh-start check on a separate safe environment without touching the existing application database.
-- Review and commit the filtered/redacted [AI development evidence](ai-transcripts/README.md) before submission.
-- Review the final handover, retain incremental Git history without squashing, and submit the repository link through the supplied form. Ensure the submitted repository is public or private with `adar2378` added. The deadline is 30 October 2026, end of day Bangladesh time.
+- [x] Complete the exact standard-command fresh-start verification without touching the existing application database.
+- [x] Package, review, and commit the filtered/redacted [AI development evidence](ai-transcripts/README.md), included in commit `83ce324`.
+- [ ] Review, approve, commit, and publish this final documentation update, preserving incremental Git history without squashing.
+- [ ] Submit the repository link through the supplied form by 30 October 2026, end of day Bangladesh time; form completion has not been verified.
+
+The [GitHub repository](https://github.com/Asif-Zaman-Suvo/seatbook) was verified publicly accessible on 25 October 2026, with remote `main` matching local commit `83ce324`. Public access satisfies the assignment's repository-access requirement.
 
 ## Detailed implementation notes
 
